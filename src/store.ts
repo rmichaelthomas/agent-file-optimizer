@@ -5,6 +5,9 @@ import type {
   WorkspaceStore,
 } from "./types";
 
+/** Most workspaces one scheduled cleanup pass takes on. The rest wait for the next pass. */
+export const PURGE_BATCH = 200;
+
 export class MemoryWorkspaceStore implements WorkspaceStore {
   private readonly workspaces = new Map<string, WorkspaceRecord>();
   private readonly files = new Map<string, Map<string, SourceFileRecord>>();
@@ -25,10 +28,12 @@ export class MemoryWorkspaceStore implements WorkspaceStore {
     return null;
   }
 
-  async listNeedingPurge(now: string): Promise<WorkspaceRecord[]> {
+  async listNeedingPurge(now: string, limit = PURGE_BATCH): Promise<WorkspaceRecord[]> {
     const timestamp = Date.parse(now);
     return [...this.workspaces.values()]
       .filter((record) => !record.purgedAt && (record.status !== "ready" || Date.parse(record.expiresAt) <= timestamp))
+      .sort((left, right) => left.expiresAt.localeCompare(right.expiresAt))
+      .slice(0, limit)
       .map((record) => ({ ...record }));
   }
 
@@ -106,13 +111,15 @@ export class D1WorkspaceStore implements WorkspaceStore {
     return row ? rowToWorkspace(row) : null;
   }
 
-  async listNeedingPurge(now: string): Promise<WorkspaceRecord[]> {
+  async listNeedingPurge(now: string, limit = PURGE_BATCH): Promise<WorkspaceRecord[]> {
     const result = await this.db
       .prepare(
         `SELECT * FROM workspaces
-         WHERE purged_at IS NULL AND (status <> 'ready' OR expires_at <= ?)`,
+         WHERE purged_at IS NULL AND (status <> 'ready' OR expires_at <= ?)
+         ORDER BY expires_at
+         LIMIT ?`,
       )
-      .bind(now)
+      .bind(now, limit)
       .all();
     return result.results.map(rowToWorkspace);
   }

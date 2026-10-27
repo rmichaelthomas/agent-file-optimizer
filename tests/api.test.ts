@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { MemoryBlobStore } from "../src/storage";
 import { MemoryWorkspaceStore } from "../src/store";
@@ -161,5 +161,25 @@ describe("workspace HTTP API", () => {
     expect(statusBody.fileCount).toBe(0);
     expect(statusBody.shareUrl).toBeUndefined();
     expect((await app.fetch(new Request(created.shareUrl))).status).toBe(410);
+  });
+});
+
+describe("internal errors", () => {
+  it("log the route prefix and error name, never a token", async () => {
+    const store = new MemoryWorkspaceStore();
+    const app = createApp(memoryEnv(), { store, blobs: new MemoryBlobStore() });
+    const workspace = await createWorkspace(app);
+    const shareToken = workspace.shareUrl.split("/s/")[1];
+    store.findByShareTokenHash = async () => {
+      throw new Error("boom");
+    };
+    const spy = vi.spyOn(console, "error").mockImplementation(() => undefined);
+    const response = await app.fetch(new Request(workspace.shareUrl));
+    expect(response.status).toBe(500);
+    const logged = spy.mock.calls.map((call) => call.join(" ")).join("\n");
+    spy.mockRestore();
+    expect(logged).toContain("request failed: GET /s/");
+    expect(logged).not.toContain(shareToken);
+    expect(logged).not.toContain(workspace.uploadToken);
   });
 });

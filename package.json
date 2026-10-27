@@ -13,10 +13,12 @@
     "deploy": "node scripts/deploy.mjs",
     "smoke": "node scripts/smoke.mjs",
     "site:check": "node scripts/check-site.mjs",
-    "site:preview": "python3 -m http.server 8788 --directory site --bind 127.0.0.1"
+    "site:preview": "python3 -m http.server 8788 --directory site --bind 127.0.0.1",
+    "browser-check": "node scripts/browser-check.mjs"
   },
   "devDependencies": {
     "@types/node": "26.5.1",
+    "playwright-core": "^1.64.1",
     "typescript": "7.0.2",
     "vitest": "5.0.0",
     "wrangler": "4.131.1"

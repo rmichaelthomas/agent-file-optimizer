@@ -86,27 +86,42 @@ function expectedRunnerId(input: Pick<ParserInput, "path" | "contentType">, opti
   return options.allowExternal && options.externalRunner?.supports(input) ? options.externalRunner.id : null;
 }
 
-export async function refreshProjections(workspace: WorkspaceRecord, services: RuntimeServices, options: ProjectionOptions = {}): Promise<ReturnType<typeof buildProjectionBundle>> {
-  const files = await services.store.listFiles(workspace.id);
-  const sources: ProjectionSource[] = [];
-  for (const record of files) {
-    const original = await services.blobs.get(originalKey(workspace.id, record.path));
-    if (!original) continue;
-    const input = parserInput(record, original.bytes);
-    const runnerId = expectedRunnerId(input, options);
-    const cached = await readParsedCache(services, workspace.id, record.sha256);
-    const parsed = cached?.runnerId === runnerId
-      ? cached.parsed
-      : await parseWithBestParser(input, options);
-    if (!cached || cached.runnerId !== runnerId) await cacheParsedResult(services, workspace.id, record.sha256, parsed, runnerId);
-    sources.push({ record, parsed });
-  }
+const REFRESH_ATTEMPTS = 3;
 
-  const bundle = buildProjectionBundle(workspace, sources);
-  for (const file of bundle.files) await services.store.putFile(file);
-  await services.blobs.deletePrefix(`${workspacePrefix(workspace.id)}projections/`);
-  await Promise.all(bundle.objects.map((object) => services.blobs.put(object)));
-  return bundle;
+function fileSignature(files: Array<{ path: string; sha256: string }>): string {
+  return files.map((file) => `${file.path}:${file.sha256}`).sort().join("|");
+}
+
+/**
+ * Rebuilds the readable projections. The five projection objects have fixed names, so each is
+ * overwritten in place and a reader never sees a missing one. Two uploads can still overlap and the
+ * slower one may write a view built from fewer files, so after writing it checks the file list
+ * again and rebuilds if it changed.
+ */
+export async function refreshProjections(workspace: WorkspaceRecord, services: RuntimeServices, options: ProjectionOptions = {}): Promise<ReturnType<typeof buildProjectionBundle>> {
+  let bundle: ReturnType<typeof buildProjectionBundle> | null = null;
+  for (let attempt = 0; attempt < REFRESH_ATTEMPTS; attempt += 1) {
+    const files = await services.store.listFiles(workspace.id);
+    const sources: ProjectionSource[] = [];
+    for (const record of files) {
+      const original = await services.blobs.get(originalKey(workspace.id, record.path));
+      if (!original) continue;
+      const input = parserInput(record, original.bytes);
+      const runnerId = expectedRunnerId(input, options);
+      const cached = await readParsedCache(services, workspace.id, record.sha256);
+      const parsed = cached?.runnerId === runnerId
+        ? cached.parsed
+        : await parseWithBestParser(input, options);
+      if (!cached || cached.runnerId !== runnerId) await cacheParsedResult(services, workspace.id, record.sha256, parsed, runnerId);
+      sources.push({ record, parsed });
+    }
+
+    bundle = buildProjectionBundle(workspace, sources);
+    for (const file of bundle.files) await services.store.putFile(file);
+    await Promise.all(bundle.objects.map((object) => services.blobs.put(object)));
+    if (fileSignature(await services.store.listFiles(workspace.id)) === fileSignature(files)) break;
+  }
+  return bundle as ReturnType<typeof buildProjectionBundle>;
 }
 
 /**

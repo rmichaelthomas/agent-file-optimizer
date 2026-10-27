@@ -21,6 +21,7 @@
       --ink: #1f2328;
       --muted: #4a5159;
       --line: #d9d3c7;
+      --edge: #857d6e;
       --accent: #33541e;
       --accent-soft: #e8efdc;
       --warn: #6b4a00;
@@ -34,6 +35,7 @@
         --ink: #f0efe9;
         --muted: #c4c8cf;
         --line: #3a3f47;
+        --edge: #7a828c;
         --accent: #b9de8a;
         --accent-soft: #263119;
         --warn: #ffd98a;
@@ -47,6 +49,7 @@
       --ink: #f0efe9;
       --muted: #c4c8cf;
       --line: #3a3f47;
+      --edge: #7a828c;
       --accent: #b9de8a;
       --accent-soft: #263119;
       --warn: #ffd98a;
@@ -87,7 +90,7 @@
     .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
     .button { display: inline-block; text-decoration: none; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; font-weight: 650; color: var(--accent); min-height: 44px; line-height: 24px; }
     .button.primary { background: var(--accent); color: var(--bg); }
-    details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
+    details { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
     summary { cursor: pointer; font-weight: 650; min-height: 32px; }
     details p { margin: 10px 0 0; color: var(--muted); }
     code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
@@ -193,6 +196,18 @@
       <p>Give the agent the share link. It should read <code>handoff.md</code> first. The link also exposes a read-only MCP endpoint for clients that support it. That endpoint is experimental.</p>
     </details>
     <div class="actions"><a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#readme">Read the README</a></div>
+  </section>
+
+  <section aria-labelledby="changes">
+    <h2 id="changes">What has changed</h2>
+    <ul>
+      <li>Setup is a button or one command. The database tables create themselves on first use.</li>
+      <li>Opening a share link in a browser shows a readable page. Agents still receive the Markdown.</li>
+      <li>A workspace with no files yet explains that, instead of showing an error.</li>
+      <li>A blank admin token now refuses to create workspaces instead of leaving them open.</li>
+      <li>The page that creates links is protected against being framed, and input borders are easier to see.</li>
+    </ul>
+    <p>The full list, by version, is in the <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/CHANGELOG.md">changelog</a>.</p>
   </section>
 </main>
 

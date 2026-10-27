@@ -31,4 +31,18 @@ describe("archive and document parser families", () => {
     expect(parsed.parserId).toBe("native-pdf-basic");
     expect(parsed.text).toContain("Basic PDF text");
   });
+
+  it("does not inflate past the declared size when an entry lies about it", async () => {
+    // A 60 MB member of zeros whose headers claim 1 KB. The parser must not expand it past the claim.
+    const bytes = zipSync({ "bomb.txt": new Uint8Array(60 * 1024 * 1024) });
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    for (let offset = 0; offset < bytes.length - 4; offset += 1) {
+      const signature = view.getUint32(offset, true);
+      if (signature === 0x04034b50) view.setUint32(offset + 22, 1024, true);
+      if (signature === 0x02014b50) view.setUint32(offset + 24, 1024, true);
+    }
+    expect(bytes.length).toBeLessThan(200 * 1024);
+    const parsed = await parseWithBestParser({ path: "bomb.zip", contentType: "application/zip", bytes });
+    expect(JSON.stringify(parsed).length).toBeLessThan(1024 * 1024);
+  });
 });
