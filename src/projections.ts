@@ -120,6 +120,14 @@ function handoff(workspace: WorkspaceRecord, sources: ProjectionSource[]): strin
     "",
     `Files: **${sources.length}**`,
     `Formats without a configured native parser: **${unsupported}**`,
+    ...(sources.length === 0
+      ? [
+          "",
+          "## No files yet",
+          "",
+          "Nothing has been uploaded to this workspace, so there is nothing to read yet. If you were expecting files, ask the sender to upload them, then open this link again. The link stays valid until the window ends or the link is revoked.",
+        ]
+      : []),
     externalProcessing
       ? "External processing was explicitly enabled for at least one file. Review parser provenance, warnings, and any provider charge before relying on the projection."
       : "External processing was not invoked. Unsupported formats are called out rather than silently uploaded to another service.",
