@@ -3,6 +3,8 @@ import { getParserCapabilities } from "./types";
 import { inflateSync, strFromU8, unzipSync, unzlibSync } from "fflate";
 import { readDocx, readPptx, readXlsx, type OfficeResult } from "./office";
 import { readPdf, type PdfResult } from "./pdf";
+import { readHtml, type HtmlRead } from "./html";
+import { readEpub, type EpubResult } from "./epub";
 
 const decoder = new TextDecoder("utf-8");
 
@@ -165,38 +167,31 @@ function tableParser(): Parser {
   };
 }
 
-function decodeEntities(text: string): string {
-  return text
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&amp;/gi, "&")
-    .replace(/&lt;/gi, "<")
-    .replace(/&gt;/gi, ">")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#39;/gi, "'");
-}
-
 function htmlParser(): Parser {
   return {
     capability: capability("native-html"),
     supports: (input) => matches(input, "native-html"),
     parse: async (input): Promise<ParsedFile> => {
-      const value = textFrom(input.bytes)
-        .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
-        .replace(/<style\b[^>]*>[\s\S]*?<\/style>/gi, "")
-        .replace(/<\/(?:p|div|section|article|h[1-6]|li|tr|br)\s*>/gi, "\n")
-        .replace(/<[^>]+>/g, "");
-      const text = decodeEntities(value)
-        .split("\n")
-        .map((line) => line.replace(/\s+/g, " ").trim())
-        .filter(Boolean)
-        .join("\n");
+      let read: HtmlRead;
+      try {
+        read = readHtml(input.bytes, input.contentType);
+      } catch (error) {
+        return {
+          parserId: "native-html",
+          billingClass: "free-native",
+          confidence: "low",
+          text: null,
+          jsonl: [],
+          warnings: [error instanceof Error && /too many elements/.test(error.message) ? error.message : "This page could not be read safely; the original was preserved."],
+        };
+      }
       return {
         parserId: "native-html",
         billingClass: "free-native",
-        confidence: "medium",
-        text,
+        confidence: read.text.trim().length > 0 ? "high" : "low",
+        text: read.text,
         jsonl: [],
-        warnings: [],
+        warnings: read.warnings,
       };
     },
   };
@@ -372,6 +367,29 @@ function normalizeArchiveMember(path: string): string {
   return cleaned;
 }
 
+function epubParser(): Parser {
+  return {
+    capability: capability("native-epub"),
+    supports: (input) => matches(input, "native-epub"),
+    parse: async (input): Promise<ParsedFile> => {
+      let result: EpubResult;
+      try {
+        result = readEpub(input.bytes);
+      } catch (error) {
+        return {
+          parserId: "native-epub",
+          billingClass: "free-native",
+          confidence: "low",
+          text: null,
+          jsonl: [],
+          warnings: [error instanceof Error ? error.message : "This book could not be read safely; the original was preserved."],
+        };
+      }
+      return { parserId: "native-epub", billingClass: "free-native", confidence: "high", text: result.text, jsonl: result.jsonl, warnings: result.warnings };
+    },
+  };
+}
+
 function pdfParser(): Parser {
   return {
     capability: capability("native-pdf"),
@@ -391,8 +409,10 @@ function pdfParser(): Parser {
         };
       }
       const readable = result.pages.filter((page) => page.trim().length > 0);
+      const outlineLines = result.outline.slice(0, 150).map((entry) => `${"  ".repeat(Math.min(entry.depth, 6))}- ${entry.title}${entry.page ? ` (page ${entry.page})` : ""}`);
+      if (result.outline.length > 150) outlineLines.push(`- (+${result.outline.length - 150} more)`);
       const text = readable.length > 0
-        ? [...(result.meta.length > 0 ? [result.meta.join("\n")] : []), ...result.pages.map((page, index) => (page.trim() ? (result.pages.length > 1 ? `### Page ${index + 1}\n\n${page}` : page) : "")).filter(Boolean)].join("\n\n")
+        ? [...(result.meta.length > 0 ? [result.meta.join("\n")] : []), ...(result.outline.length >= 2 ? [`Contents (the PDF's own outline):\n${outlineLines.join("\n")}`] : []), ...result.pages.map((page, index) => (page.trim() ? (result.pages.length > 1 ? `### Page ${index + 1}\n\n${page}` : page) : "")).filter(Boolean)].join("\n\n")
         : null;
       return {
         parserId: "native-pdf",
@@ -421,16 +441,16 @@ function fallbackParser(): Parser {
   };
 }
 
-const parsers = [jsonParser(), tableParser(), htmlParser(), pdfParser(), archiveParser(), textParser(), fallbackParser()];
+const parsers = [jsonParser(), tableParser(), htmlParser(), pdfParser(), epubParser(), archiveParser(), textParser(), fallbackParser()];
 
 export function getNativeParsers(): Parser[] {
   return [...parsers];
 }
 
-const documentExtensions = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".zip"]);
+const documentExtensions = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".zip", ".epub"]);
 
 export async function parseWithBestParser(input: ParserInput, options: { allowArchive?: boolean; allowDocuments?: boolean; allowExternal?: boolean; externalRunner?: ExternalParserRunner } = {}): Promise<ParsedFile> {
-  if (options.allowDocuments === false && (documentExtensions.has(extension(input.path)) || /pdf|zip|officedocument/i.test(input.contentType)) && !options.externalRunner?.supports(input)) {
+  if (options.allowDocuments === false && (documentExtensions.has(extension(input.path)) || /pdf|zip|officedocument|epub/i.test(input.contentType)) && !options.externalRunner?.supports(input)) {
     return {
       parserId: "fallback-original-only",
       billingClass: "unsupported",

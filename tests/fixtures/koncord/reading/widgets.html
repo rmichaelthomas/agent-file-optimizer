@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en"><head><title>Controls inside prose</title></head>
+<body><main>
+<p>Mix the batter until smooth.<button>replay</button> Then rest it.<span class="Video-Controls">mute</span></p>
+<p>A step with a <a class="animated-gif__button" href="/gif">replay</a> link and <span class="BTN">a button span</span> in it.</p>
+<p>A step with a custom element <gif-player>play again</gif-player> inside.</p>
+<p>A citation<style>.ref { color: red }</style> with an inline stylesheet.</p>
+<p>A paragraph with a template <template><p>template text</p></template> and a noscript <noscript><p>noscript text</p></noscript> in it.</p>
+<p>A paragraph with an SVG link: <svg><a href="svg-link"><text>SVG link</text></a></svg> and an <a href="html-link">HTML link</a>, which is long enough.</p>
+<li><svg><a href="only-svg"><text>list entry</text></a></svg> with text</li>
+<p>Hidden <span aria-hidden="true">icon</span> words, and <span aria-hidden="TRUE">shown</span> words.</p>
+<p role="button">A paragraph that is a button</p>
+<div aria-expanded="false"><svg><a href="svg-disclosure" aria-expanded="true"><text>An SVG disclosure</text></a></svg></div>
+<p>Text in a <del>struck <a href="/struck">linked</a> passage</del> within a paragraph.</p>
+<my-card><p>A paragraph inside a custom element.</p></my-card>
+<h3><a href="/watch"><yt-formatted-string>A title written in a custom element</yt-formatted-string></a><share-button>Share</share-button></h3>
+<template><p>A paragraph only in a template.</p></template>
+<div><template shadowrootmode="open"><p>A paragraph in a shadow root.</p></template><p>A paragraph beside a shadow root, which no slot draws.</p></div>
+<article-card><template shadowrootmode="open"><h2>A heading the root draws</h2><slot></slot></template><p>A paragraph the root's slot brings in.</p></article-card>
+</main></body></html>

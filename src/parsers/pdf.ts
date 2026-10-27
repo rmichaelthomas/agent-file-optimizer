@@ -1075,12 +1075,110 @@ function pdfString(value: string): string {
 export interface PdfResult {
   pages: string[];
   meta: string[];
+  /** The PDF's own outline (bookmarks): the author's sectioning, with the page each entry points to (1-based), when it could be found. */
+  outline: OutlineEntry[];
   warnings: string[];
   confidence: "high" | "medium" | "low";
 }
 
+export interface OutlineEntry {
+  title: string;
+  depth: number;
+  page: number | null;
+}
+
 const MAX_PAGES = 400;
 const MAX_OUTPUT_CHARS = 1_500_000;
+
+const MAX_OUTLINE_ENTRIES = 500;
+
+/** Where a named destination points: the catalog's /Dests dictionary, or the /Names /Dests name tree. */
+function namedDestination(doc: PdfDocument, root: Dict | undefined, name: string): Value | undefined {
+  const dests = doc.dict(root?.get("Dests"));
+  if (dests?.has(name)) return dests.get(name);
+  const tree = doc.dict(doc.dict(root?.get("Names"))?.get("Dests"));
+  let visited = 0;
+  const search = (node: Dict | undefined, depth: number): Value | undefined => {
+    if (!node || depth > 12 || visited++ > 4000) return undefined;
+    const names = doc.array(node.get("Names"));
+    for (let i = 0; i + 1 < names.length; i += 2) {
+      const key = doc.resolve(names[i]);
+      if (key instanceof Str && key.value === name) return names[i + 1];
+    }
+    for (const kid of doc.array(node.get("Kids"))) {
+      const found = search(doc.dict(kid), depth + 1);
+      if (found !== undefined) return found;
+    }
+    return undefined;
+  };
+  return search(tree, 0);
+}
+
+function readOutline(doc: PdfDocument, root: Dict | undefined, pages: Dict[]): OutlineEntry[] {
+  const outlines = doc.dict(root?.get("Outlines"));
+  if (!outlines) return [];
+  const index = new Map<Dict, number>();
+  pages.forEach((page, i) => index.set(page, i));
+  const pageOf = (destination: Value | undefined): number | null => {
+    let value = doc.resolve(destination);
+    for (let hops = 0; hops < 4 && value !== undefined; hops += 1) {
+      if (value instanceof Str) value = doc.resolve(namedDestination(doc, root, value.value));
+      else if (value instanceof Name) value = doc.resolve(namedDestination(doc, root, value.name));
+      else if (value instanceof Map) value = doc.resolve(value.get("D"));
+      else break;
+    }
+    if (!Array.isArray(value) || value.length === 0) return null;
+    const target = value[0];
+    if (target instanceof Ref) {
+      const found = index.get(doc.dict(target) as Dict);
+      return found === undefined ? null : found + 1;
+    }
+    return null;
+  };
+  const out: OutlineEntry[] = [];
+  const seen = new Set<Dict>();
+  const visit = (first: Value | undefined, depth: number): void => {
+    let node = doc.dict(first);
+    while (node && !seen.has(node) && out.length < MAX_OUTLINE_ENTRIES) {
+      seen.add(node);
+      const title = doc.resolve(node.get("Title"));
+      const text = title instanceof Str ? pdfString(title.value).replace(/\s+/g, " ").trim() : "";
+      const action = doc.dict(node.get("A"));
+      if (text) out.push({ title: text, depth, page: pageOf(node.get("Dest") ?? action?.get("D")) });
+      if (depth < 8) visit(node.get("First"), depth + 1);
+      node = doc.dict(node.get("Next"));
+    }
+  };
+  visit(outlines.get("First"), 0);
+  return out;
+}
+
+/** What identifies a document rather than names it: a repository stamp, a DOI, a page counter, a date. */
+const IDENTIFIER = /^(?:arxiv\s*:|doi\s*:|isbn|issn|https?:|www\.|preprint|draft\b|page\s+\d|vol(?:ume)?\.?\s*\d|[\d\s.,:/()[\]-]+$)/i;
+
+/** The title as the page's largest text, when one stands out. It is a guess, and the result says so. */
+function inferTitle(runs: Run[]): string {
+  // Stylised titles are often drawn a letter at a time, so a one-character run counts.
+  const usable = runs.filter((run) => !run.rotated && run.size > 0 && run.text.trim().length >= 1 && !IDENTIFIER.test(run.text.trim()));
+  if (usable.length < 3) return "";
+  // The body size is the size most characters are set in, so a few large lines cannot raise it.
+  const weight = new Map<number, number>();
+  for (const run of runs) if (run.size > 0) weight.set(Math.round(run.size * 2) / 2, (weight.get(Math.round(run.size * 2) / 2) ?? 0) + run.text.length);
+  const body = [...weight].sort((a, b) => b[1] - a[1])[0]?.[0] ?? 0;
+  const largest = Math.max(...usable.map((run) => run.size));
+  if (largest < body * 1.25) return "";
+  // Take every run on the baselines of the largest text, whatever its size, so small capitals and drop capitals stay whole.
+  const baselines = usable.filter((run) => run.size >= largest * 0.92).map((run) => run.y);
+  const text = runsToText(usable.filter((run) => baselines.some((y) => Math.abs(run.y - y) <= largest * 0.35)))
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .slice(0, 3)
+    .join(" ")
+    .replace(/\s+/g, " ")
+    .trim();
+  return text.length >= 4 && text.length <= 200 && !IDENTIFIER.test(text) ? text : "";
+}
 
 export function readPdf(bytes: Uint8Array): PdfResult {
   budget = 64 * 1024 * 1024;
@@ -1088,7 +1186,7 @@ export function readPdf(bytes: Uint8Array): PdfResult {
   const warnings: string[] = [];
   const doc = new PdfDocument(bytes);
   if (doc.encrypted) {
-    return { pages: [], meta: [], warnings: ["This PDF is encrypted, so its text was not read. The original was preserved."], confidence: "low" };
+    return { pages: [], meta: [], outline: [], warnings: ["This PDF is encrypted, so its text was not read. The original was preserved."], confidence: "low" };
   }
 
   const pageDicts: Array<{ dict: Dict; resources: Dict | undefined }> = [];
@@ -1117,9 +1215,11 @@ export function readPdf(bytes: Uint8Array): PdfResult {
   let unmapped = 0;
   let totalChars = 0;
 
+  let firstPageRuns: Run[] | null = null;
   const readPage = (source: string, resources: Dict | undefined): string => {
     const context: PageContext = { runs: [], unmapped: 0, decoded: 0, hasImages: false, steps: 0 };
     interpret(doc, source, resources, IDENTITY, context, fonts, 0);
+    if (firstPageRuns === null) firstPageRuns = context.runs;
     decoded += context.decoded;
     unmapped += context.unmapped;
     const text = runsToText(context.runs);
@@ -1170,6 +1270,16 @@ export function readPdf(bytes: Uint8Array): PdfResult {
     // Writers fill these with placeholders; a placeholder tells the reader nothing.
     if (text && !/^(?:untitled|anonymous|about:blank|unknown|unspecified)$/i.test(text)) meta.push(`${key}: ${text}`);
   }
+  if (!meta.some((line) => line.startsWith("Title: ")) && firstPageRuns) {
+    const guess = inferTitle(firstPageRuns);
+    if (guess) meta.unshift(`Title (guessed from the largest text on page 1): ${guess}`);
+  }
+  let outline: OutlineEntry[] = [];
+  try {
+    outline = readOutline(doc, root, pageDicts.map((page) => page.dict));
+  } catch {
+    outline = [];
+  }
 
   const readable = pages.filter((page) => page.trim().length > 0).length;
   if (readable === 0) {
@@ -1186,5 +1296,5 @@ export function readPdf(bytes: Uint8Array): PdfResult {
   }
   warnings.push("Text follows the order the PDF was written in. Page layout, columns, tables, and pictures are not reproduced.");
   const confidence: PdfResult["confidence"] = readable === 0 ? "low" : unmapped / Math.max(decoded, 1) > 0.05 ? "medium" : "high";
-  return { pages, meta, warnings, confidence };
+  return { pages, meta, outline, warnings, confidence };
 }

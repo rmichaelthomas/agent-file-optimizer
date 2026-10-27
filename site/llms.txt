@@ -19,7 +19,7 @@
 
 ## Limits stated plainly
 
-- Reads text, Markdown, code, logs, JSON, CSV, TSV, HTML, ZIP, DOCX, PPTX, XLSX, and PDF. PDFs are read in the order they were written. Images and scans are kept as originals with no text recognition.
+- Reads text, Markdown, code, logs, JSON, CSV, TSV, HTML, EPUB, ZIP, DOCX, PPTX, XLSX, and PDF. PDFs are read in the order they were written. Images and scans are kept as originals with no text recognition.
 - Each file is limited to 10 MiB. Private repositories are not supported.
 - Not a malware scanner. A share link is a bearer link: anyone who has it can read the workspace until it ends.
 - The read-only MCP endpoint is experimental and tested with a few clients.

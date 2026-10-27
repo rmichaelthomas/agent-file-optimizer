@@ -7,9 +7,9 @@ Usage:
 For each file, recall is the share of the reference extractor's words that appear in ours, and
 precision is the share of our words the reference also has. Words are lower-case letters and digits.
 References: poppler's pdftotext for PDFs (best of its raw, default, and layout modes, since they
-differ on word spacing); python-docx, python-pptx, and openpyxl for Office files. Precision is
+differ on word spacing); python-docx, python-pptx, and openpyxl for Office files; pandoc for EPUB and HTML. Precision is
 lower for Office files by design, because we add headings, slide numbers, and metadata lines.
-Needs: pdftotext on PATH, and pip install python-docx python-pptx openpyxl
+Needs: pdftotext and pandoc on PATH, and pip install python-docx python-pptx openpyxl
 """
 import os, re, subprocess, sys
 from collections import Counter
@@ -74,13 +74,20 @@ def best_pdf_reference(path, ours):
     return best[1]
 
 
+def ref_pandoc(path, source):
+    return subprocess.run(["pandoc", "-f", source, "-t", "plain", "--wrap=none", path], capture_output=True, text=True).stdout
+
+
 rows = []
 for name in sorted(os.listdir(directory)):
     ext = name.rsplit(".", 1)[-1].lower()
-    if ext not in ("pdf", "docx", "pptx", "xlsx"): continue
+    if ext not in ("pdf", "docx", "pptx", "xlsx", "epub", "html", "htm"): continue
     ours = words(open(os.path.join(out, name + ".txt")).read())
     path = os.path.join(directory, name)
-    ref = best_pdf_reference(path, ours) if ext == "pdf" else words({"docx": ref_docx, "pptx": ref_pptx, "xlsx": ref_xlsx}[ext](path))
+    if ext == "pdf": ref = best_pdf_reference(path, ours)
+    elif ext == "epub": ref = words(ref_pandoc(path, "epub"))
+    elif ext in ("html", "htm"): ref = words(ref_pandoc(path, "html"))
+    else: ref = words({"docx": ref_docx, "pptx": ref_pptx, "xlsx": ref_xlsx}[ext](path))
     total = sum(ref.values())
     shared = sum((ref & ours).values())
     rows.append((name, total, shared / max(total, 1), shared / max(sum(ours.values()), 1)))

@@ -244,3 +244,24 @@ describe("files it cannot or should not read", () => {
   });
 });
 
+
+describe("what the PDF says about its own structure", () => {
+  it("lists the outline with the page each entry points to", async () => {
+    const parsed = await parse(fixture("outline-reportlab.pdf"));
+    expect(parsed.text).toContain("Contents (the PDF's own outline):\n- 1 Introduction (page 1)\n- 2 Method (page 2)\n  - 2.1 Counting notes (page 2)\n- 3 Results (page 3)");
+  });
+
+  it("guesses a missing title from the largest text, and says it is a guess", async () => {
+    const parsed = await parse(fixture("outline-reportlab.pdf"));
+    // The margin stamp is larger than the title, as on arXiv, and runs up the page, so it is not taken for the title.
+    expect(parsed.text).toContain("Title (guessed from the largest text on page 1): Lanterns in the Margin: A Study of Footnotes");
+    expect(parsed.text).not.toMatch(/Title \(guessed[^\n]*arXiv/);
+  });
+
+  it("does not guess when the PDF states a title, or when no text stands out", async () => {
+    const stated = await parse(fixture("report-reportlab.pdf"));
+    expect(stated.text).not.toContain("guessed");
+    const plain = await parse(fixture("notes-quartz.pdf"));
+    expect(plain.text).not.toContain("guessed");
+  });
+});

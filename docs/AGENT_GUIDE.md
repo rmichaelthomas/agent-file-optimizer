@@ -55,9 +55,9 @@ Current deployments, for reference:
 | `src/lifecycle.ts` | Tokens, projection refresh, purge, cleanup (`purgeWorkspace`, `settleWorkspace`, `expireDue`). |
 | `src/store.ts` | Workspace and file metadata: `MemoryWorkspaceStore` and `D1WorkspaceStore`. |
 | `src/storage.ts` | Blob storage: `MemoryBlobStore` and `R2BlobStore`. |
-| `src/parsers/` | Parser routing. `native.ts` is the free default. `types.ts` holds capabilities and the external runner seam. `sandbox-runner.ts` is the isolated runner adapter. `pdf.ts` reads PDFs, `office.ts` reads DOCX, PPTX, and XLSX, `xml.ts` is the small XML reader they share, `fontprogram.ts` reads built-in font encodings, and `glyphs.ts` is generated glyph data (do not edit it by hand). |
+| `src/parsers/` | Parser routing. `native.ts` is the free default. `types.ts` holds capabilities and the external runner seam. `sandbox-runner.ts` is the isolated runner adapter. `pdf.ts` reads PDFs, `office.ts` reads DOCX, PPTX, and XLSX, `xml.ts` is the small XML reader they share, `html.ts` reads HTML and XHTML (a light tree, then Markdown), `htmltokens.ts` is its tokenizer (follows the HTML Standard; checked against html5lib), `markupencoding.ts` chooses the text encoding, `entities.ts` is generated character-reference data (do not edit it by hand), `epub.ts` reads EPUB books through `html.ts`, `fontprogram.ts` reads built-in font encodings, and `glyphs.ts` is generated glyph data (do not edit it by hand). |
 | `src/projections.ts` | Builds `handoff.md`, `manifest.json`, `tree.txt`, `content.md`, `content.jsonl`. |
-| `src/mcp.ts` | Read-only, stateless JSON-RPC endpoint at `/s/<token>/mcp`. |
+| `src/mcp.ts` | Read-only, stateless JSON-RPC endpoint at `/s/<token>/mcp`. A text longer than about 75,000 characters is returned a part at a time (`part`), because agent clients cut a tool answer off at about 25,000 tokens. |
 | `src/repository.ts` | Public GitHub import: allowlisted hosts, redirect limit, archive size cap. |
 | `src/safety.ts` | Basic heuristic checks. Not malware scanning. |
 | `src/mime.ts` | Content type from extension when the upload declares nothing useful. |
@@ -99,6 +99,7 @@ Errors use `{ error, message }`. Status `410` means expired or revoked. Limits: 
 - `tests/api.test.ts`, `tests/archive.test.ts`, `tests/parsers.test.ts`: API, ZIP, and parser behavior.
 - `tests/render.test.ts`: the HTML view (escaping, readable time, browser vs agent).
 - `tests/entry.test.ts`: the Worker entry (landing, health check, JSON 404).
+- `tests/html.test.ts`: the tokenizer and encoding detection against html5lib's tests. `tests/html-reader.test.ts`: the HTML reader. `tests/koncord-fixtures.test.ts`: the reader on Koncord's hard cases. `tests/epub.test.ts`: the EPUB reader on built books.
 - `tests/pdf.test.ts`, `tests/office.test.ts`: the document readers, with real files from Chrome, macOS, ReportLab, pandoc, openpyxl, and XlsxWriter in `tests/fixtures/`, plus hand-built edge cases.
 - `tests/document-reading.test.ts`: `DOCUMENT_READING=off`.
 - `tests/extraction-dump.test.ts`: writes extracted text for `scripts/benchmark/compare_extraction.py`. It does nothing unless `EVAL_IN` and `EVAL_OUT` are set.
@@ -114,7 +115,7 @@ When you change behavior, add a test that fails before the change.
 
 - Describe what is working, basic, experimental, or not yet, using the README's capability table.
 - Name the limits where they matter: PDFs are read in drawing order, so columns can interleave, and scans, encrypted files, and Asian-language text with no character map are not read; Office files are read as text and structure, not layout; images have no OCR; private repositories are not supported; the MCP endpoint was checked with three clients, listed in `docs/examples/mcp-session.md`.
-- Do not promise a general token saving. `docs/BENCHMARKS.md` has the measured cases: text and code stay within a few percent of the original, one HTML page was 76% smaller. Quote those, with their caveats, and nothing broader.
+- Do not promise a general token saving. `docs/BENCHMARKS.md` has the measured cases: text and code stay within a few percent of the original, one HTML page was 76% smaller, and ten real web pages averaged about 91% fewer tokens than their markup. Quote those, with their caveats, and nothing broader.
 - Do not add analytics, newsletter forms, testimonials, pricing, or user counts to the site.
 
 ## Files that stay local

@@ -62,7 +62,7 @@ describe("native parser registry", () => {
       bytes: new TextEncoder().encode("<h1>Hello</h1><script>bad()</script><p>World</p>"),
     });
     expect(parsed.parserId).toBe("native-html");
-    expect(parsed.text).toBe("Hello\nWorld");
+    expect(parsed.text).toBe("# Hello\n\nWorld");
     expect(parsed.text).not.toContain("bad");
   });
 

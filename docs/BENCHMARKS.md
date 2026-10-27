@@ -47,9 +47,33 @@ Across the ten files an agent can read as text, the readable notes total 24,602 
 
 An agent that reads `handoff.md` and `content.md` pays 255 tokens of orientation on top of the content. It can skip `manifest.json` until a warning matters.
 
+## Web pages and books
+
+Measured 28 Oct 2026. Ten real pages were fetched live (`scripts/benchmark/pages.py`): Wikipedia, MDN, GOV.UK, Hacker News, Project Gutenberg, an arXiv abstract page, the Python docs, the BBC News front page, example.com, and a recipe page. Tokens use the same proxy tokenizer as above, comparing the page's markup with the reading.
+
+| Page | Markup (tokens) | Reading (tokens) | Fewer |
+| --- | ---: | ---: | ---: |
+| Wikipedia, "Fugue" | 147,699 | 24,446 | 83% |
+| MDN, HTTP | 59,795 | 3,794 | 94% |
+| GOV.UK, driving | 20,336 | 966 | 95% |
+| Hacker News front page | 11,779 | 3,392 | 71% |
+| Project Gutenberg, a book page | 7,405 | 1,117 | 85% |
+| arXiv abstract page | 13,094 | 2,328 | 82% |
+| Python docs, `json` | 32,934 | 8,498 | 74% |
+| BBC News | 134,115 | 3,293 | 98% |
+| example.com | 151 | 36 | 76% |
+| A recipe page | 155,912 | 2,029 | 99% |
+| **All ten** | **583,220** | **49,899** | **91%** |
+
+Most of the saving is code and styling that a page carries and a reader does not need. The pages are modern and script-heavy, so older, plainer HTML will save less. The reading keeps the page's links (written without its own origin when the page states one), which is part of what remains.
+
+**Is it accurate?** Word recall against pandoc (`pandoc -f html -t plain`): median 99.9%, word-weighted 96.7%. One page is under 90%: the recipe page, at 56%, because pandoc also reads text the page hides (menus, consent notices) that this reader leaves out on purpose; the recipe's ingredients and method are all present. For EPUB, 27 books (12 Project Gutenberg editions in two formats, 3 Standard Ebooks, 12 IDPF samples including a Japanese book, an Arabic one, and a mathematics textbook, and a Wikisource book) against `pandoc -f epub -t plain`: median 100%, word-weighted 98.0%. One book is under 90%: a linear algebra textbook at 80%, where pandoc writes equations as TeX commands (`\begin{bmatrix}`, `\qquad`) and this reader writes the symbols (`x_1+x_2`), so its words differ; precision on that book is 96.6%. A book made only of pictures is refused with a reason. EPUBs are binary files an agent cannot read at all, so there is no token comparison; reading takes 10 to 220 ms a book (1.3 s for the 25 MB textbook).
+
+What this does not show: pages that need scripts to show their content (the reader says so, and reads what is there), reading order on pages laid out in columns by CSS, or accuracy on pages in right-to-left scripts beyond the one Arabic book.
+
 ## What this supports saying, and what it does not
 
-- **Supported:** "On one HTML page, the readable text was 76% fewer tokens than the markup." "Office files, which an agent cannot read directly, become readable text." "On text and code the notes are within a few percent of the original."
+- **Supported:** "On ten real web pages, the readable text was about 91% fewer tokens than the markup (71% to 99%, measured with a proxy tokenizer)." "On one HTML page in the first corpus, 76%." "Office files, which an agent cannot read directly, become readable text." "On text and code the notes are within a few percent of the original."
 - **Not supported:** any general "saves N% of tokens" claim. The corpus is small, one HTML page is not a sample, and the tokenizer is a proxy.
 
 ## Is the reading accurate?

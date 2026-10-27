@@ -1,5 +1,5 @@
 /// <reference types="node" />
-// Writes what the reader extracts from every PDF and Office file in a folder, for comparing with other
+// Writes what the reader extracts from every PDF, Office, EPUB, and HTML file in a folder, for comparing with other
 // extractors (scripts/benchmark/compare_extraction.py). It does nothing unless both variables are set:
 //   EVAL_IN=/path/to/files EVAL_OUT=/path/to/output npx vitest run tests/extraction-dump.test.ts
 import { it } from "vitest";
@@ -14,7 +14,7 @@ it("dumps extracted text for comparison", async () => {
   mkdirSync(out, { recursive: true });
   const summary: Record<string, unknown> = {};
   for (const name of readdirSync(dir)) {
-    if (!/\.(docx|pptx|xlsx|pdf)$/i.test(name)) continue;
+    if (!/\.(docx|pptx|xlsx|pdf|epub|html?)$/i.test(name)) continue;
     const bytes = new Uint8Array(readFileSync(join(dir, name)));
     const started = performance.now();
     const parsed = await parseWithBestParser({ path: name, contentType: "application/octet-stream", bytes });
