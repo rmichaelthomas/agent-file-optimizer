@@ -74,9 +74,9 @@ npm install
 npm run deploy
 ```
 
-`npm run deploy` logs you in if needed, creates the storage, creates an admin token, and deploys. The token and the code go out in the same deploy, so the Worker is never live without one. The token is saved to `.admin-token` (git-ignored, mode 600), and the script prints the path, never the token itself. Run it again to redeploy with the same token.
+`npm run deploy` logs you in if needed, creates the storage, creates an admin token, and deploys. The token and the code go out in the same deploy, so the Worker is never live without one. The token is saved in your home folder at `~/.agent-file-optimizer-admin-token` (mode 600). The script prints the path, never the token itself, and nothing is stored in the project folder. Run it again to redeploy with the same token.
 
-If your Worker already has an admin token and there is no `.admin-token` file, the script stops and tells you. It does not replace a token it did not create.
+If your Worker already has an admin token and this computer has no saved copy, the script stops and tells you. It does not replace a token it did not create.
 
 ### 3. Run it on your machine, with no account
 

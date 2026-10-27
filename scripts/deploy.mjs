@@ -2,19 +2,20 @@
 //
 // It makes sure you are logged in, creates an admin token if this Worker has none, and deploys.
 // The token travels with the code in one deploy, so the Worker is never live without it.
-// The token is saved to .admin-token (git-ignored, mode 600) and is never printed. If that file
-// exists, its token is the one sent on every deploy, so the file stays the source of truth.
+// The token is saved in your home folder, at ~/.agent-file-optimizer-admin-token (mode 600), and is
+// never printed. It is never stored in the project folder. If that file exists, its token is the one
+// sent on every deploy, so the file stays the source of truth.
 //
 // Pass --dry-run to see what would happen without deploying or changing any secret.
 import { spawnSync } from "node:child_process";
 import { chmodSync, existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { randomBytes } from "node:crypto";
-import { tmpdir } from "node:os";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const tokenPath = join(root, ".admin-token");
+const tokenPath = join(homedir(), ".agent-file-optimizer-admin-token");
 const dryRun = process.argv.includes("--dry-run");
 const npx = process.platform === "win32" ? "npx.cmd" : "npx";
 const env = { ...process.env, WRANGLER_SEND_METRICS: "false" };
@@ -36,20 +37,20 @@ let token;
 let tokenSource;
 if (existsSync(tokenPath)) {
   token = readFileSync(tokenPath, "utf8").trim();
-  tokenSource = "existing .admin-token";
+  tokenSource = "saved admin token";
 } else {
   // A Worker that does not exist yet has no secrets, so a failed list also means "none".
   const listed = wrangler(["secret", "list", "--format", "json"]);
   const names = listed.status === 0 ? JSON.parse(listed.stdout || "[]").map((secret) => secret.name) : [];
   if (names.includes("ADMIN_TOKEN")) {
     fail(
-      "This Worker already has an ADMIN_TOKEN, but there is no .admin-token file here.\n" +
-        "Put the existing token in .admin-token (mode 600), or replace it with `npx wrangler secret put ADMIN_TOKEN`.\n" +
+      "This Worker already has an ADMIN_TOKEN, but this computer has no saved copy of it.\n" +
+        `Put the existing token in ${tokenPath} (mode 600), or replace it with \`npx wrangler secret put ADMIN_TOKEN\`.\n` +
         "This script will not overwrite it silently.",
     );
   }
   token = randomBytes(32).toString("base64url");
-  tokenSource = "new .admin-token";
+  tokenSource = "new admin token";
   if (!dryRun) {
     writeFileSync(tokenPath, `${token}\n`, { mode: 0o600 });
     chmodSync(tokenPath, 0o600);
@@ -72,5 +73,5 @@ try {
   rmSync(workDir, { recursive: true, force: true });
 }
 
-console.log(`\nDeployed. Your admin token is in ${tokenPath}.`);
+console.log(`\nDeployed. Your admin token is saved at ${tokenPath}.`);
 console.log("Send it as a Bearer token when creating a workspace. Keep that file private.");

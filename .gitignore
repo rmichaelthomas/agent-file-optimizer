@@ -10,6 +10,3 @@ dist/
 work/
 outputs/
 docs/superpowers/
-
-# The admin token saved by `npm run deploy`. Keep it private.
-.admin-token

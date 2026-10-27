@@ -16,7 +16,7 @@ It is software to be run by its operator. It is not a hosted service, and do not
 | `npm test` | Runs all Vitest suites. All tests use in-memory adapters and need no network. |
 | `npm run typecheck` | `tsc --noEmit` over `src/` and `tests/`. |
 | `npm run dev` | `wrangler dev` on local bindings. The schema is created on first use, so there is no migration step. |
-| `npm run deploy` | Logs in if needed, creates the admin token on first run, and deploys with the token in the same step. Saves the token to `.admin-token`. Refuses to replace a token it did not create. |
+| `npm run deploy` | Logs in if needed, creates the admin token on first run, and deploys with the token in the same step. Saves the token to `~/.agent-file-optimizer-admin-token`. Refuses to replace a token it did not create. |
 | `npm run smoke` | Starts the Worker locally and runs create, upload, and read through a share link. No Cloudflare account. CI runs it. |
 | `npm run deploy:dry` | `wrangler deploy --dry-run`. Builds the bundle and lists bindings. Does not publish. |
 | `npm run site:check` | Static checks on `site/index.html`: metadata, no scripts or trackers, attribution, no unsupported claims. |
