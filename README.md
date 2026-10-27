@@ -85,15 +85,16 @@ The manifest is honest about what it could not do. A file it cannot read stays a
 
 ## Honest limits
 
-It does not replace a document-conversion pipeline. PDF extraction is limited and Office extraction is basic, images get no text recognition, and it is not a malware scanner. The [table below](#capabilities) says exactly what works, what is basic, and what is not built yet. A short list of what you should know before relying on it:
+It reads text, not layout. It does not do OCR, so scans and pictures stay as originals, and it is not a malware scanner. The [table below](#capabilities) says exactly what is read, how, and what is not built yet. A short list of what you should know before relying on it:
 
+- Reading a PDF or an Office file takes real CPU. Cloudflare's free Workers plan allows 10 ms per request, which small documents can fit and larger ones will not, so on the free plan set `DOCUMENT_READING=off` (the originals are still kept) or use the paid plan. See [Operating notes](#operating-notes).
 - A share link is a **bearer link**: anyone who has it can read the workspace until it ends. Treat it like a password.
 - Deletion is best-effort with retry. It is not secure erasure, and your hosting provider's backups are outside the app's control. See [PRIVACY.md](PRIVACY.md).
 - The read-only MCP endpoint is experimental. It has been tested with three clients, listed in [docs/examples/mcp-session.md](docs/examples/mcp-session.md).
 
 ## Capabilities
 
-Status key: **Works** means implemented and tested in this repository. **Basic** means it works for simple cases and can lose content or formatting. **Experimental** means it works in the tests we ran but has not been checked broadly. **Not yet** means not implemented.
+Status key: **Works** means implemented and tested in this repository, with the limits in the notes. **Experimental** means it works in the tests we ran but has not been checked broadly. **Not yet** means not implemented.
 
 | Capability | Status | Notes |
 | --- | --- | --- |
@@ -102,10 +103,12 @@ Status key: **Works** means implemented and tested in this repository. **Basic**
 | Revoke a link | Works | The link returns `410` at once. Content deletion is retried if it fails partway. |
 | Text, Markdown, code, logs | Works | Preserved, with readable notes. Common code extensions are listed; any other file whose bytes are UTF-8 text is read as text too. |
 | JSON, CSV, TSV | Works | Structured records in `content.jsonl`. |
-| HTML | Works | Basic text extraction. |
+| HTML | Works | The visible text, without scripts or styling. |
 | ZIP archives | Works | Members are extracted within size and count limits. |
-| DOCX, PPTX, XLSX | Basic | Text only. Spreadsheets come out one sheet at a time, one row per line, cells separated by tabs. Formatting, images, comments, and some content may be missing, and DOCX tables read one cell per line. |
-| PDF | Basic | Reads only PDFs that store text as plain strings. In the benchmark, neither a PDF from a library nor one printed from Chrome gave any text, so expect many PDFs to be original-only. Scanned pages are never read. |
+| DOCX | Works | Headings, lists, tables, links, footnotes, comments, headers and footers, text boxes, and picture descriptions. Pictures, drawings, and deleted text are not read. |
+| PPTX | Works | Slides in presentation order: titles, bullets, tables, chart data, picture descriptions, and speaker notes. Layout and pictures are not read. |
+| XLSX | Works | Each sheet as tab-separated rows, hidden sheets marked. Dates, booleans, and shared text are resolved, and a formula shows its last calculated value. Number formats such as currency are not applied, and a sheet stops at 5,000 rows. |
+| PDF | Works | Text PDFs, in the order the PDF draws them, so columns can interleave. Checked against poppler on 59 PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others: 99.3% of its words found. Scanned pages (no OCR), encrypted files, and Chinese, Japanese, or Korean text with no character map are not read, and the reader says so. |
 | Images and scans | Original only | Kept as originals with a warning. No text recognition is built in. |
 | Public GitHub repository import | Works | Only `github.com` public repositories over HTTPS. Redirects are limited to GitHub hosts. 25 MiB archive cap. |
 | Private repositories | Not yet | Not supported. |
@@ -178,6 +181,7 @@ The upload token is returned only once, when the workspace is created. Keep it i
 - **Cleanup.** The scheduled cleanup runs from the `*/15 * * * *` trigger in `wrangler.jsonc`. Keep the trigger enabled, or expired workspaces are only removed when someone next requests them.
 - **Custom address.** Set `APP_BASE_URL` in `wrangler.jsonc` if the Worker sits behind your own domain.
 - **Storage.** The first deploy creates the schema itself. The `migrations/` folder is the record of how the schema changed, and it is not something you run by hand.
+- **CPU.** Reading a PDF or an Office file uses CPU time. Cloudflare's free Workers plan allows 10 ms per request, enough for small documents but not for multi-page PDFs or large spreadsheets, which fail with a Cloudflare 1102 error. The paid plan allows 30 seconds by default. On the free plan, set `DOCUMENT_READING` to `off` as a Worker variable: PDFs, Office files, and ZIPs are then kept as originals with a note, and everything else still works.
 - **Rate limit.** `wrangler.jsonc` binds a rate limiter set to 120 requests a minute per caller address, counted separately for share reads and API calls. Cloudflare's limiter is approximate: counts are per location and eventually consistent, so it is a brake on floods, not an exact cap (a burst of 700 requests got 31 refusals in a live test). Change `limit` there, or remove the `ratelimits` entry to turn it off. For an exact limit, use a Cloudflare rate-limiting rule on your own domain.
 - **Uptime alert.** `.github/workflows/uptime.yml` checks your deployment every 15 minutes. Set the repository variable `HEALTHCHECK_URL` to your Worker's address and a failed run emails you. `npm run health` runs the same check by hand.
 - **Logs.** Per-request logs and traces are off in `wrangler.jsonc`, because a logged URL would contain a share token. Leave them off. Cloudflare's own account-level analytics are outside this repository.

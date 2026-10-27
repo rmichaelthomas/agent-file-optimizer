@@ -74,7 +74,7 @@ export function renderLandingPage(): string {
     <input id="admin-token" type="password" autocomplete="off" placeholder="Leave blank unless required">
 
     <h2 style="margin-top:22px">3. Create the link</h2>
-    <p class="note">Each file keeps its original. Text, Markdown, JSON, CSV/TSV, HTML, basic PDF, ZIP, DOCX, PPTX and XLSX also get readable notes; the handoff lists what could be read. A file that cannot be converted (for example an image) is still included as its original and flagged in the handoff, and no external parser is called unless this deployment enables one.</p>
+    <p class="note">Each file keeps its original. Text, Markdown, JSON, CSV/TSV, HTML, PDF, ZIP, DOCX, PPTX and XLSX also get readable notes; the handoff lists what could be read. A file that cannot be converted (for example an image) is still included as its original and flagged in the handoff, and no external parser is called unless this deployment enables one.</p>
     <p class="note">The link works for anyone who has it, until it expires or you revoke it. Deletion is attempted when the window ends or you revoke, and retried by a scheduled cleanup. Copies may remain in provider backups or logs. Read <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md" target="_blank" rel="noopener noreferrer">PRIVACY.md</a> for details.</p>
     <button id="go" type="button">Create temporary agent link</button>
     <div id="result" role="status" aria-live="polite"></div>

@@ -1,6 +1,8 @@
 import type { ExternalParserRunner, Parser, ParsedFile, ParserInput } from "./types";
 import { getParserCapabilities } from "./types";
 import { inflateSync, strFromU8, unzipSync, unzlibSync } from "fflate";
+import { readDocx, readPptx, readXlsx, type OfficeResult } from "./office";
+import { readPdf, type PdfResult } from "./pdf";
 
 const decoder = new TextDecoder("utf-8");
 
@@ -228,74 +230,12 @@ function readableXml(xml: string): string {
     .join("\n");
 }
 
-function xmlText(fragment: string): string {
-  return decodeXmlEntities([...fragment.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map((match) => match[1]).join(""));
-}
-
-function columnIndex(reference: string): number {
-  let index = 0;
-  for (const char of reference.replace(/[^A-Za-z]/g, "").toUpperCase()) index = index * 26 + (char.charCodeAt(0) - 64);
-  return Math.max(index - 1, 0);
-}
-
-/**
- * Reads a workbook the way a person would see it: one section per named sheet, one line per row, cells
- * separated by tabs. Cell values are looked up in the shared-strings table, which is how Excel stores
- * almost every text cell, so a sheet's own XML alone only holds numbers that point into that table.
- */
-function xlsxSections(members: ArchiveMember[]): Array<{ path: string; name: string; text: string }> {
-  const byName = new Map(members.map((member) => [member.name, strFromU8(member.bytes)] as const));
-  const shared = [...(byName.get("xl/sharedStrings.xml") ?? "").matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)].map((match) => xmlText(match[1]));
-  const targets = new Map<string, string>();
-  for (const match of (byName.get("xl/_rels/workbook.xml.rels") ?? "").matchAll(/<Relationship\b[^>]*>/g)) {
-    const id = /\bId="([^"]*)"/.exec(match[0])?.[1];
-    const target = /\bTarget="([^"]*)"/.exec(match[0])?.[1];
-    if (id && target) targets.set(id, target.startsWith("/") ? target.slice(1) : `xl/${target}`);
-  }
-  const sheets: Array<{ name: string; path: string }> = [];
-  for (const match of (byName.get("xl/workbook.xml") ?? "").matchAll(/<sheet\b[^>]*>/g)) {
-    const name = /\bname="([^"]*)"/.exec(match[0])?.[1];
-    const rid = /\br:id="([^"]*)"/.exec(match[0])?.[1];
-    const path = rid ? targets.get(rid) : undefined;
-    if (name && path && byName.has(path)) sheets.push({ name: decodeXmlEntities(name), path });
-  }
-  if (sheets.length === 0) {
-    for (const member of members) if (/^xl\/worksheets\/sheet\d+\.xml$/i.test(member.name)) sheets.push({ name: member.name.replace(/^xl\/worksheets\/|\.xml$/gi, ""), path: member.name });
-  }
-
-  const sections: Array<{ path: string; name: string; text: string }> = [];
-  for (const sheet of sheets) {
-    const rows: string[] = [];
-    for (const row of (byName.get(sheet.path) ?? "").matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
-      const cells: string[] = [];
-      for (const cell of row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
-        const type = /\bt="([^"]*)"/.exec(cell[1])?.[1];
-        const reference = /\br="([^"]*)"/.exec(cell[1])?.[1];
-        const body = cell[2] ?? "";
-        const raw = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1];
-        let value = "";
-        if (type === "inlineStr") value = xmlText(body);
-        else if (raw !== undefined && type === "s") value = shared[Number(raw)] ?? "";
-        else if (raw !== undefined && type === "b") value = raw === "1" ? "TRUE" : "FALSE";
-        else if (raw !== undefined) value = decodeXmlEntities(raw);
-        const column = reference ? columnIndex(reference) : cells.length;
-        while (cells.length < column) cells.push("");
-        cells.push(value.replace(/[\t\r\n]+/g, " ").trim());
-      }
-      while (cells.length > 0 && cells[cells.length - 1] === "") cells.pop();
-      if (cells.length > 0) rows.push(cells.join("\t"));
-    }
-    if (rows.length > 0) sections.push({ path: sheet.path, name: sheet.name, text: rows.join("\n") });
-  }
-  return sections;
-}
-
 interface ArchiveMember {
   name: string;
   bytes: Uint8Array;
 }
 
-function boundedArchiveMembers(bytes: Uint8Array): { members: ArchiveMember[]; skipped: number } {
+function boundedArchiveMembers(bytes: Uint8Array, include?: (name: string) => boolean): { members: ArchiveMember[]; skipped: number } {
   let selected = 0;
   let skipped = 0;
   let totalBytes = 0;
@@ -303,6 +243,7 @@ function boundedArchiveMembers(bytes: Uint8Array): { members: ArchiveMember[]; s
     const unzipped = unzipSync(bytes, {
       filter: (file) => {
         if (file.name.endsWith("/")) return false;
+        if (include && !include(file.name)) return false;
         if (selected >= archiveMemberLimit || file.originalSize > archiveMemberBytesLimit || totalBytes + file.originalSize > archiveBytesLimit) {
           skipped += 1;
           return false;
@@ -344,7 +285,8 @@ function archiveParser(): Parser {
       const kind = officeKind(input.path);
       let extracted: { members: ArchiveMember[]; skipped: number };
       try {
-        extracted = boundedArchiveMembers(input.bytes);
+        // An Office package is mostly pictures and fonts. Only its XML parts are read, so the member limit is not spent on media.
+        extracted = boundedArchiveMembers(input.bytes, kind ? (name) => /\.(?:xml|rels)$/i.test(name) : undefined);
       } catch (error) {
         return {
           parserId: kind ? `native-office-${kind}` : "native-archive",
@@ -359,15 +301,27 @@ function archiveParser(): Parser {
       const sections: string[] = [];
       const jsonl: string[] = [];
       const warnings: string[] = [];
-      let members = kind ? officeMemberSelection(kind, extracted.members) : extracted.members;
-      if (kind === "xlsx") {
-        const sheets = xlsxSections(extracted.members);
-        for (const sheet of sheets) {
-          sections.push(`### Sheet: ${sheet.name}\n\n${sheet.text}`);
-          jsonl.push(JSON.stringify({ path: sheet.path, sheet: sheet.name, text: sheet.text }));
+      if (kind) {
+        let result: OfficeResult | null = null;
+        try {
+          const files = new Map(extracted.members.map((member) => [member.name, member.bytes] as const));
+          result = kind === "docx" ? readDocx(files) : kind === "pptx" ? readPptx(files) : readXlsx(files);
+        } catch {
+          result = null;
         }
-        if (sheets.length > 0) members = [];
+        if (result) {
+          return {
+            parserId: `native-office-${kind}`,
+            billingClass: "free-native",
+            confidence: "high",
+            text: result.text,
+            jsonl: result.jsonl,
+            warnings: [...result.warnings, ...(extracted.skipped > 0 ? [`${extracted.skipped} package part(s) were omitted by safety limits.`] : [])],
+          };
+        }
+        warnings.push("The document's structure could not be read, so its raw text content is shown instead.");
       }
+      const members = kind ? officeMemberSelection(kind, extracted.members) : extracted.members;
       for (const member of members) {
         let memberPath: string;
         try {
@@ -418,53 +372,35 @@ function normalizeArchiveMember(path: string): string {
   return cleaned;
 }
 
-function decodePdfLiteral(value: string): string {
-  return value
-    .replace(/\\([nrtbf()\\])/g, (_match, code: string) => ({ n: "\n", r: "\r", t: "\t", b: "\b", f: "\f", "(": "(", ")": ")", "\\": "\\" })[code] ?? code)
-    .replace(/\\([0-7]{1,3})/g, (_match, code: string) => String.fromCharCode(parseInt(code, 8)));
-}
-
-function pdfLiteralStrings(text: string): string[] {
-  const values: string[] = [];
-  for (const match of text.matchAll(/\(((?:\\.|[^()])*)\)\s*Tj/g)) values.push(decodePdfLiteral(match[1]));
-  for (const match of text.matchAll(/\[([^\]]*)\]\s*TJ/gi)) {
-    for (const literal of match[1].matchAll(/\(((?:\\.|[^()])*)\)/g)) values.push(decodePdfLiteral(literal[1]));
-  }
-  return values;
-}
-
 function pdfParser(): Parser {
   return {
-    capability: capability("native-pdf-basic"),
-    supports: (input) => matches(input, "native-pdf-basic"),
+    capability: capability("native-pdf"),
+    supports: (input) => matches(input, "native-pdf"),
     parse: async (input): Promise<ParsedFile> => {
-      const latin1 = new TextDecoder("latin1").decode(input.bytes);
-      const contents = [latin1];
-      let cursor = 0;
-      while (true) {
-        const streamStart = latin1.indexOf("stream", cursor);
-        if (streamStart < 0) break;
-        const dataStart = latin1[streamStart + 6] === "\r" && latin1[streamStart + 7] === "\n" ? streamStart + 8 : streamStart + 7;
-        const dataEnd = latin1.indexOf("endstream", dataStart);
-        if (dataEnd < 0) break;
-        if (/\/FlateDecode/i.test(latin1.slice(Math.max(0, streamStart - 200), streamStart))) {
-          const compressed = input.bytes.slice(dataStart, dataEnd);
-          try {
-            contents.push(new TextDecoder("latin1").decode(unzlibSync(compressed)));
-          } catch {
-            try { contents.push(new TextDecoder("latin1").decode(inflateSync(compressed))); } catch { /* keep scanning literal source */ }
-          }
-        }
-        cursor = dataEnd + 9;
+      let result: PdfResult;
+      try {
+        result = readPdf(input.bytes);
+      } catch (error) {
+        return {
+          parserId: "native-pdf",
+          billingClass: "free-native",
+          confidence: "low",
+          text: null,
+          jsonl: [],
+          warnings: [error instanceof Error && /too large|larger than/.test(error.message) ? error.message : "This PDF could not be read safely; the original was preserved."],
+        };
       }
-      const text = pdfLiteralStrings(contents.join("\n")).join("\n").trim();
+      const readable = result.pages.filter((page) => page.trim().length > 0);
+      const text = readable.length > 0
+        ? [...(result.meta.length > 0 ? [result.meta.join("\n")] : []), ...result.pages.map((page, index) => (page.trim() ? (result.pages.length > 1 ? `### Page ${index + 1}\n\n${page}` : page) : "")).filter(Boolean)].join("\n\n")
+        : null;
       return {
-        parserId: "native-pdf-basic",
+        parserId: "native-pdf",
         billingClass: "free-native",
-        confidence: text ? "medium" : "low",
-        text: text || null,
-        jsonl: text ? [JSON.stringify({ text })] : [],
-        warnings: text ? ["Basic PDF extraction preserves literal text but may miss complex layout, scanned pages, and embedded fonts."] : ["The basic PDF reader found no text it can decode; the original was preserved. Scanned PDFs, and many PDFs exported from browsers and word processors, store text in a form this reader does not handle. They need the optional document parser runner."],
+        confidence: result.confidence,
+        text,
+        jsonl: result.pages.map((page, index) => JSON.stringify({ page: index + 1, text: page })).filter((_line, index) => result.pages[index].trim().length > 0),
+        warnings: result.warnings,
       };
     },
   };
@@ -491,7 +427,19 @@ export function getNativeParsers(): Parser[] {
   return [...parsers];
 }
 
-export async function parseWithBestParser(input: ParserInput, options: { allowArchive?: boolean; allowExternal?: boolean; externalRunner?: ExternalParserRunner } = {}): Promise<ParsedFile> {
+const documentExtensions = new Set([".pdf", ".docx", ".pptx", ".xlsx", ".zip"]);
+
+export async function parseWithBestParser(input: ParserInput, options: { allowArchive?: boolean; allowDocuments?: boolean; allowExternal?: boolean; externalRunner?: ExternalParserRunner } = {}): Promise<ParsedFile> {
+  if (options.allowDocuments === false && (documentExtensions.has(extension(input.path)) || /pdf|zip|officedocument/i.test(input.contentType)) && !options.externalRunner?.supports(input)) {
+    return {
+      parserId: "fallback-original-only",
+      billingClass: "unsupported",
+      confidence: "low",
+      text: null,
+      jsonl: [],
+      warnings: ["Reading PDFs, Office files, and ZIP archives is turned off on this deployment (DOCUMENT_READING=off), so the original was preserved."],
+    };
+  }
   if (options.allowExternal && options.externalRunner?.supports(input)) {
     try {
       const parsed = await options.externalRunner.parse(input);

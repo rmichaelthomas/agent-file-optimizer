@@ -98,7 +98,7 @@ describe("native parser registry", () => {
       parse: async () => ({ parserId: "test-external", billingClass: "external", confidence: "medium", text: "External text", jsonl: [], warnings: ["priced runner"] }),
     };
     const input = { path: "brief.pdf", contentType: "application/pdf", bytes: new Uint8Array([37, 80, 68, 70]) };
-    expect((await parseWithBestParser(input, { externalRunner: runner })).parserId).toBe("native-pdf-basic");
+    expect((await parseWithBestParser(input, { externalRunner: runner })).parserId).toBe("native-pdf");
     const parsed = await parseWithBestParser(input, { allowExternal: true, externalRunner: runner });
     expect(parsed.parserId).toBe("test-external");
     expect(parsed.billingClass).toBe("external");

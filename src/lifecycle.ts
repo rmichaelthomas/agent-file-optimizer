@@ -45,6 +45,8 @@ export async function shareTokenRecord(request: Request, store: RuntimeServices[
 }
 
 export interface ProjectionOptions {
+  /** False when the deployment turns off reading PDFs, Office files, and ZIPs (DOCUMENT_READING=off). */
+  allowDocuments?: boolean;
   allowExternal?: boolean;
   externalRunner?: ExternalParserRunner;
 }

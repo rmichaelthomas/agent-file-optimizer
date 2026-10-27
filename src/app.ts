@@ -318,6 +318,7 @@ export interface AppOptions {
 
 export function createApp(env: AppEnv, services: RuntimeServices, options: AppOptions = {}) {
   const parserOptions: ProjectionOptions = {
+    allowDocuments: env.DOCUMENT_READING !== "off",
     allowExternal: options.allowExternalProcessing === true,
     externalRunner: options.externalParserRunner,
   };

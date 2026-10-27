@@ -33,7 +33,7 @@ describe("workspace HTTP API", () => {
     const response = await app.fetch(new Request("https://optimizer.test/api/capabilities"));
     expect(response.status).toBe(200);
     const body = await json<{ parsers: Array<{ id: string }>; policy: { externalProcessing: string } }>(response);
-    expect(body.parsers.map((parser) => parser.id)).toContain("native-pdf-basic");
+    expect(body.parsers.map((parser) => parser.id)).toContain("native-pdf");
     expect(body.parsers.map((parser) => parser.id)).toContain("native-office-docx");
     expect(body.policy.externalProcessing).toBe("never-implicit");
   });
