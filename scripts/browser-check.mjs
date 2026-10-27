@@ -88,6 +88,14 @@ check("copy button responds", copyLabel === "Copied" || copyLabel.startsWith("Co
 const handoff = await page.request.get(linkText.trim());
 check("share link serves handoff", handoff.status() === 200 && (await handoff.text()).includes("Agent File Optimizer handoff"));
 
+// A person opening the link gets a readable page, not raw Markdown.
+const reader = await desktop.newPage();
+await reader.goto(linkText.trim(), { waitUntil: "load" });
+const readerText = await reader.textContent("main");
+check("share link opens as a readable page", (await reader.locator("main h1").count()) === 1 && !readerText.includes("**") && !readerText.includes("`") && /\bUTC\b/.test(readerText), readerText.slice(0, 60).replace(/\s+/g, " "));
+await shot(reader, "reader.png");
+await reader.close();
+
 // Revoke from the UI, then the link must be gone.
 const revoked = page.waitForResponse((r) => r.url().endsWith("/revoke") && r.request().method() === "POST");
 await page.click("#result button:nth-of-type(2)");

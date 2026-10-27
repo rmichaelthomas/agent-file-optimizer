@@ -1,8 +1,9 @@
 import { createTokenPair, hashBytes, hashToken, tokensMatch } from "./crypto";
-import { analysisKey, bearerToken, cacheParsedResult, originalKey, projectionKey, settleWorkspace, publicView, refreshProjections, shareTokenRecord, summarizeProcessing, uploadTokenMatches, type ProjectionOptions } from "./lifecycle";
+import { PROJECTION_NAMES, analysisKey, bearerToken, cacheParsedResult, originalKey, projectionKey, settleWorkspace, publicView, refreshProjections, shareTokenRecord, summarizeProcessing, uploadTokenMatches, type ProjectionOptions } from "./lifecycle";
 import { getParserCapabilities, isWorkspaceWindowHours, type ExternalParserRunner } from "./parsers/types";
 import { parseWithBestParser } from "./parsers/native";
 import { handleMcpRequest } from "./mcp";
+import { renderSharePage } from "./render";
 import { basicSafetyCheck } from "./safety";
 import { downloadPublicRepository, maxRepositoryBytes, parsePublicRepositoryUrl } from "./repository";
 import { normalizeRelativePath } from "./path";
@@ -257,6 +258,11 @@ async function revokeWorkspace(request: Request, services: RuntimeServices, id: 
   return json({ id, status: "revoked", purged: true, message: "Workspace content was deleted." });
 }
 
+// A person opening the link: the browser asks for a document and says so. Agent fetchers and curl do not send Sec-Fetch-Dest.
+function isBrowserNavigation(request: Request): boolean {
+  return request.headers.get("sec-fetch-dest") === "document" && (request.headers.get("accept") ?? "").includes("text/html");
+}
+
 async function share(request: Request, services: RuntimeServices): Promise<Response> {
   const workspace = await shareTokenRecord(request, services.store);
   if (!workspace) return errorResponse(404, "Share link not found.");
@@ -274,6 +280,23 @@ async function share(request: Request, services: RuntimeServices): Promise<Respo
   if (!key) return errorResponse(404, "That workspace resource was not found.");
   const object = await services.blobs.get(key);
   if (!object) return errorResponse(404, "That workspace resource was not found.");
+  if (!name && handoffName === "handoff.md" && isBrowserNavigation(request)) {
+    const base = `/s/${token}`;
+    const page = renderSharePage(
+      new TextDecoder().decode(object.bytes),
+      [...PROJECTION_NAMES].map((projection) => ({ name: projection, href: `${base}/${projection}` })),
+    );
+    return new Response(page, {
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "content-security-policy": "default-src 'none'; style-src 'unsafe-inline'; img-src data:; frame-ancestors 'none'",
+        "referrer-policy": "no-referrer",
+        "x-robots-tag": "noindex, nofollow, noarchive",
+      },
+    });
+  }
   const body = new ArrayBuffer(object.bytes.byteLength);
   new Uint8Array(body).set(object.bytes);
   return new Response(body, {

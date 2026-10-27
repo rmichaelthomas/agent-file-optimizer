@@ -1,6 +1,6 @@
 # Agent File Optimizer
 
-**Turn a set of files into a temporary, readable workspace, and a link you can share with an agent or a collaborator.**
+**Turn files into a temporary, readable link for an agent or a collaborator.**
 
 ![The result screen after files were added: a share link, an expiry time, and buttons to copy or revoke it](docs/images/result.png)
 

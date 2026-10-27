@@ -5,6 +5,7 @@
 - Setup: one-click Deploy to Cloudflare button, `npm run deploy`, and a schema that creates itself on first use. No separate migration step.
 - A blank `ADMIN_TOKEN` now refuses workspace creation instead of leaving it open.
 - A workspace with no files yet serves a handoff that says so, instead of a 404.
+- Opening a share link in a browser shows a readable page. Agents and `curl` still receive the Markdown unchanged.
 - The landing page sends framing, content-type, and referrer protections.
 - Internal errors reach the 500 handler and are logged by route class only, never a token.
 - Uploads that overlap no longer risk a missing or stale handoff.

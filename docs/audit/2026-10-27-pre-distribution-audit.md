@@ -35,11 +35,11 @@ Verdict: ready for the owner and a few people who will read the stated limits an
 | 1.6 Zip lying about size | Verified: fflate allocates by the declared size and truncates, so memory is bounded. Test added. |
 | 2.1 Projection refresh | Done. The five projection objects are overwritten in place (no delete first), and the refresh repeats if the file list changed while writing. |
 | 2.2 Purge bound | Done. 200 per pass, oldest first. |
-| 2.3 README first line | Waiting on the owner's wording. |
-| 2.4 HTML rendering of the handoff | Waiting on the owner (format contract). |
-| 2.5 Changelog, tag, template | Done. `v0.1.0` is a local tag on `a8122e9`, not pushed. |
+| 2.3 README first line | Done with the owner's approved wording. |
+| 2.4 HTML rendering of the handoff | Done, owner approved. `src/render.ts`; only the base share link, only for a browser navigation (`Sec-Fetch-Dest: document`). `/handoff.md` and agents get the Markdown unchanged. |
+| 2.5 Changelog, tag, template | Done. `v0.1.0` is tagged on `a8122e9` and pushed. |
 | 2.6 Pin Actions | Done. |
-| 2.7 Private vulnerability reporting | Setting is off (`gh api` reports `enabled: false`). `SECURITY.md` already names a fallback contact. Owner decides whether to enable it. |
+| 2.7 Private vulnerability reporting | Enabled on the owner's instruction; `gh api` reports `enabled: true`. |
 | 3.1 Indentation | Done. |
 | 3.2 Landing intent line | No change, as planned. |
 

@@ -43,6 +43,7 @@ Current deployments, for reference:
 | `src/index.ts` | Worker entry: landing page, HTTP app, scheduled cleanup. Creates the schema on first use. |
 | `src/schema.ts` | The current D1 schema, idempotent. Mirrors `migrations/`. |
 | `scripts/deploy.mjs` | `npm run deploy`: login check, admin token, deploy with the token. |
+| `src/render.ts` | Escaped Markdown subset rendered to HTML for a browser opening the base share link. |
 | `scripts/smoke.mjs` | `npm run smoke`: first-run check on local bindings. |
 | `scripts/browser-check.mjs` | `npm run browser-check`: the landing page in a real browser. |
 | `src/app.ts` | HTTP routes, upload and repository import, revoke, share reads, request limits. |
@@ -91,6 +92,7 @@ Errors use `{ error, message }`. Status `410` means expired or revoked. Limits: 
 ## Tests
 
 - `tests/api.test.ts`, `tests/archive.test.ts`, `tests/parsers.test.ts`: API, ZIP, and parser behavior.
+- `tests/render.test.ts`: the HTML view (escaping, readable time, browser vs agent).
 - `tests/entry.test.ts`: the Worker entry (landing, health check, JSON 404).
 - `tests/schema.test.ts`: schema bootstrap (idempotent, retries after failure), and the admin token gate, including a blank token.
 - `tests/lifecycle.test.ts`: retry after failed purge, expiry cleanup retry, revoke racing an upload, R2 batch deletion, request caps, content types through MCP.
