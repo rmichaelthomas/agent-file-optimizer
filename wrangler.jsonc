@@ -9,6 +9,8 @@
     "head_sampling_rate": 1,
     "redact_query_string": true
   },
+  // No resource IDs here on purpose. Wrangler creates the bucket and database on the first
+  // `wrangler deploy` (or `wrangler dev`) and writes their IDs back, so each copy gets its own.
   "r2_buckets": [
     {
       "binding": "FILES",
@@ -19,7 +21,6 @@
     {
       "binding": "DB",
       "database_name": "agent-file-optimizer",
-      "database_id": "5ad9641a-a7d9-4cb2-b9a7-9d8834ad0ae0",
       "migrations_dir": "migrations"
     }
   ],

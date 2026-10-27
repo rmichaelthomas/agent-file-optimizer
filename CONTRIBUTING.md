@@ -16,9 +16,12 @@ npm test          # unit and HTTP tests, all in-memory
 npm run typecheck
 npm run site:check
 npm run deploy:dry
+npm run smoke    # starts the Worker locally and runs the first-run flow end to end
 ```
 
 CI runs the same commands. A change is ready when they pass locally.
+
+Schema changes need two edits: a new file in `migrations/` for existing databases, and the matching statement in `src/schema.ts`, which creates the schema on a fresh database. Keep the two in step.
 
 ## Guidelines
 

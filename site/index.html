@@ -112,8 +112,8 @@
     <h1>Hand files to an agent without the setup.</h1>
     <p class="lede">Agent File Optimizer turns a set of files into a temporary, readable workspace. You get one link. Whoever you share it with, human or agent, can read the originals and clear notes about them. When the window you chose ends, the link stops working and the content is deleted.</p>
     <div class="actions">
-      <a class="button primary" href="https://github.com/rmichaelthomas/agent-file-optimizer">Read the code on GitHub</a>
-      <a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#self-hosting">Set up your own copy</a>
+      <a class="button primary" href="https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer">Deploy your own copy to Cloudflare</a>
+      <a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer">Read the code on GitHub</a>
     </div>
     <p class="notice" style="margin-top:22px">There is no hosted service to sign up for. This project is software you run on your own Cloudflare account. The maintainer's own deployment is private and needs an admin token to create links.</p>
   </header>
@@ -182,11 +182,11 @@
     <h2 id="use">How to use it</h2>
     <details open>
       <summary>Try it on your computer</summary>
-      <p>Clone the repository, run <code>npm install</code>, then <code>npm run dev</code>. Open the local address Wrangler prints. Local mode uses simulated storage, which is fine for trying things out.</p>
+      <p>Clone the repository, run <code>npm install</code>, then <code>npm run dev</code>. Open the local address Wrangler prints. No Cloudflare account is needed. The database and bucket live on your machine, in <code>.wrangler/</code>, and nothing is sent to Cloudflare.</p>
     </details>
     <details>
       <summary>Run your own copy on Cloudflare</summary>
-      <p>You need a Cloudflare account, an R2 bucket, and a D1 database. The README walks through the Wrangler steps, the admin token that keeps strangers from creating workspaces, and the dry run before deploying.</p>
+      <p>Click <strong>Deploy your own copy to Cloudflare</strong> above, or run <code>npm run deploy</code> from a clone. Either way, the storage is created for you, and you set an admin token so strangers cannot create workspaces on your account. The README covers the details and the privacy notes.</p>
     </details>
     <details>
       <summary>Connect an agent</summary>

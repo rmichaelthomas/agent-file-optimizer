@@ -1,0 +1,3 @@
+# Copy to .dev.vars for local runs with an admin token. The Deploy to Cloudflare button asks for ADMIN_TOKEN.
+# Leave it unset for local use without a token.
+ADMIN_TOKEN=
