@@ -18,6 +18,7 @@ It is software to be run by its operator. It is not a hosted service, and do not
 | `npm run dev` | `wrangler dev` on local bindings. The schema is created on first use, so there is no migration step. |
 | `npm run deploy` | Logs in if needed, creates the admin token on first run, and deploys with the token in the same step. Saves the token to `~/.agent-file-optimizer-admin-token`. Refuses to replace a token it did not create. |
 | `npm run smoke` | Starts the Worker locally and runs create, upload, and read through a share link. No Cloudflare account. CI runs it. |
+| `npm run og` | Regenerates `site/og.png` (Open Graph) and `docs/images/social-preview.png` (the file to upload in the repository's Social preview setting). Needs Google Chrome. |
 | `npm run browser-check` | Drives the landing page in Chrome against a local Worker: create, copy, open, revoke, error paths, layout and contrast. Needs Google Chrome. Set `BASE` to check a live copy. CI runs it. |
 | `npm run deploy:dry` | `wrangler deploy --dry-run`. Builds the bundle and lists bindings. Does not publish. |
 | `npm run site:check` | Static checks on `site/index.html`: metadata, no scripts or trackers, attribution, no unsupported claims. |
@@ -45,6 +46,7 @@ Current deployments, for reference:
 | `scripts/deploy.mjs` | `npm run deploy`: login check, admin token, deploy with the token. |
 | `src/render.ts` | Escaped Markdown subset rendered to HTML for a browser opening the base share link. |
 | `scripts/smoke.mjs` | `npm run smoke`: first-run check on local bindings. |
+| `scripts/og-image.mjs` | `npm run og`: renders the social preview images from one template. |
 | `scripts/browser-check.mjs` | `npm run browser-check`: the landing page in a real browser. |
 | `src/app.ts` | HTTP routes, upload and repository import, revoke, share reads, request limits. |
 | `src/lifecycle.ts` | Tokens, projection refresh, purge, cleanup (`purgeWorkspace`, `settleWorkspace`, `expireDue`). |

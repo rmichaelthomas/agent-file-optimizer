@@ -14,7 +14,8 @@
     "smoke": "node scripts/smoke.mjs",
     "site:check": "node scripts/check-site.mjs",
     "site:preview": "python3 -m http.server 8788 --directory site --bind 127.0.0.1",
-    "browser-check": "node scripts/browser-check.mjs"
+    "browser-check": "node scripts/browser-check.mjs",
+    "og": "node scripts/og-image.mjs"
   },
   "devDependencies": {
     "@types/node": "26.5.1",

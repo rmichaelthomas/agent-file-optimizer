@@ -1,22 +1,67 @@
 # Agent File Optimizer
 
-**Turn files into a temporary, readable link for an agent or a collaborator.**
+**Hand files to an agent, then let them expire.**
+
+[![CI](https://github.com/rmichaelthomas/agent-file-optimizer/actions/workflows/ci.yml/badge.svg)](https://github.com/rmichaelthomas/agent-file-optimizer/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Runs on Cloudflare Workers](https://img.shields.io/badge/runs%20on-Cloudflare%20Workers-f38020.svg)](https://workers.cloudflare.com/)
+
+[Project site](https://rmichaelthomas.github.io/agent-file-optimizer/) · [Deploy your own copy](https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer) · [Try it locally](#try-it-in-two-minutes) · [Limits](#capabilities)
 
 ![The result screen after files were added: a share link, an expiry time, and buttons to copy or revoke it](docs/images/result.png)
 
-You add files, a folder, or a public GitHub repository. The app keeps the originals, adds readable notes where it can, and gives you one link. The link stops working when the window you chose ends (1, 6, or 12 hours), or sooner if you revoke it. Then the stored content is deleted.
+You have a folder of mixed files: a PDF, a spreadsheet, some notes, a zip. You want an AI agent, or a colleague, to read it. Explaining each file, converting some of them, and remembering which copy is current is the tedious part.
 
-It is open source and self-hosted. There is no hosted service to sign up for, and this repository does not run one.
+Agent File Optimizer does that preparation once. You add the files (or a public GitHub repository) and get **one link**. Whoever opens it finds your originals, a short note saying what is there and what to read first, and readable text for the formats it understands. When the window you chose ends (1, 6, or 12 hours), the link stops working and the stored content is deleted.
 
-## Why you might use it
+It is open source and self-hosted. There is no hosted service to sign up for, and this repository does not run one. It runs on your own Cloudflare account, or on your computer with no account at all.
 
-- An agent needs to read a folder of mixed files, and you do not want to explain each one or write conversion commands.
-- You want to hand something to a collaborator for an afternoon without keeping it around afterwards.
-- You want the agent to start from the originals plus a short orientation note, not from whatever it can scrape.
+## Why people reach for it
+
+- **An agent needs to read a folder**, and you do not want to write conversion commands or explain each file.
+- **A collaborator needs something for an afternoon**, and you do not want it sitting in a shared drive afterwards.
+- **You want the agent to start from the originals** plus an orientation note, not from whatever it can scrape.
+- **You want a clock on it.** The link ends on its own, and you can end it sooner.
+
+## Try it in two minutes
+
+No account, nothing leaves your machine:
+
+```sh
+git clone https://github.com/rmichaelthomas/agent-file-optimizer.git
+cd agent-file-optimizer
+npm install
+npm run dev
+```
+
+Open the address it prints, drop in a file, and press **Create temporary agent link**. The data lives in `.wrangler/` on your computer.
+
+Ready to run your own copy for real? Use the button, which needs a Cloudflare account and no terminal, or see [Get started](#get-started) for the one-command route.
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer)
 
 ## What an agent receives
 
-Open the link and the first thing it gets is `handoff.md`, a plain-language orientation. The workspace also contains:
+Open the link and the first thing it gets is `handoff.md`, a plain-language orientation. This is real output for a two-file workspace:
+
+```markdown
+# Agent File Optimizer handoff
+
+This is a temporary workspace prepared for agent use. Its content is deleted when the window ends or the link is revoked.
+It was created for **agent-understanding** and expires at **2026-10-28T03:49:33.742Z** (UTC).
+
+## Start here
+
+- Read `manifest.json` for file-level provenance, hashes, parser status, and warnings.
+- Read `content.md` for the compact human-readable projection.
+- Read `content.jsonl` for row- or record-oriented ingestion.
+- Read `tree.txt` to understand the workspace layout.
+- Use `original/<path>` when the projection is incomplete or fidelity matters.
+
+Files: **2**
+```
+
+A person who opens the same link in a browser sees the same note as a readable page. An agent, or `curl`, receives the Markdown above. The workspace contains:
 
 | File | What it is |
 | --- | --- |
@@ -26,6 +71,25 @@ Open the link and the first thing it gets is `handoff.md`, a plain-language orie
 | `content.md` | Readable text from the files that could be converted. |
 | `content.jsonl` | Structured records for JSON, CSV/TSV, and similar files. |
 | `original/<path>` | Every file exactly as you added it. |
+
+The manifest is honest about what it could not do. A file it cannot read stays as an original and is flagged, rather than being silently dropped or guessed at. See a [sample manifest](docs/examples/manifest.example.json).
+
+## How it compares
+
+| If you would otherwise... | What is different here |
+| --- | --- |
+| Zip the folder and share a drive link | The agent gets an orientation note and a manifest, not a bundle to unpack. The link ends by itself. |
+| Paste files into a chat | Originals stay intact, paths are kept, and the same link works for several agents or sessions within the window. |
+| Use a tool that flattens a repository into one prompt | This takes mixed folders, not only repositories, and keeps the originals beside the readable text. It does not do private repositories. |
+| Use a hosted file-sharing service | You run it, so the files sit in an account you control. The cost is that you have to deploy it. |
+
+## Honest limits
+
+It does not replace a document-conversion pipeline. PDF and Office extraction is basic, images get no text recognition, and it is not a malware scanner. The [table below](#capabilities) says exactly what works, what is basic, and what is not built yet. A short list of what you should know before relying on it:
+
+- A share link is a **bearer link**: anyone who has it can read the workspace until it ends. Treat it like a password.
+- Deletion is best-effort with retry. It is not secure erasure, and your hosting provider's backups are outside the app's control. See [PRIVACY.md](PRIVACY.md).
+- The read-only MCP endpoint is experimental and has been tested with one client.
 
 ## Capabilities
 
@@ -136,6 +200,26 @@ The bucket must be empty to be deleted. Revoke or wait out any open workspaces f
 A share link is a bearer link. Anyone who has it can read the workspace until it expires or is revoked. The link is not one-time: an agent can read `handoff.md`, then the manifest, then any file, as many times as it needs within the window.
 
 The upload token and the share link are separate. The upload token can add files and revoke the workspace. The share link can only read. Both are random, and the server stores only their hashes.
+
+
+## Questions
+
+**Is there a hosted version?** No. You run your own copy.
+
+**Does it cost anything?** The software is free under Apache-2.0. The workspaces run in your Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage.
+
+**Can an agent use it without me?** Yes. Give the agent the share link and tell it to read `handoff.md` first. The link also exposes a read-only [MCP](https://modelcontextprotocol.io/) endpoint for clients that support it. That endpoint is experimental.
+
+**What happens to my files afterwards?** They are deleted when the window ends or you revoke the link. [PRIVACY.md](PRIVACY.md) lists what is stored, and what can remain outside the app's control.
+
+## Help it grow
+
+This is a small project and it is useful to hear how it behaves on real folders.
+
+- **Star the repository** if it is something you would use. It is how other people find it.
+- **Open an issue** with a file type that came out badly, or a limit that got in your way. The [bug report template](https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md) asks for the few details that help. Please leave share links and tokens out of issues.
+- **Read the [roadmap](ROADMAP.md)** for what is planned and what is deliberately not, then see [CONTRIBUTING.md](CONTRIBUTING.md) if you want to work on something.
+- **Report a security problem privately.** [SECURITY.md](SECURITY.md) says how.
 
 ## Documentation
 

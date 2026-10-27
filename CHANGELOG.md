@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Discovery: canonical link, Open Graph and Twitter large-image cards with a 1200x630 image, JSON-LD (software and FAQ), `robots.txt`, `sitemap.xml`, `llms.txt`, a favicon, and a visible FAQ on the public site. `npm run site:check` enforces them.
+- `npm run og` regenerates the social preview images, including the 1280x640 file for the repository's Social preview setting.
+- README rewritten to lead with the problem and a two-minute local start, show real handoff output, compare with the alternatives, and state limits up front.
+
 - Setup: one-click Deploy to Cloudflare button, `npm run deploy`, and a schema that creates itself on first use. No separate migration step.
 - A blank `ADMIN_TOKEN` now refuses workspace creation instead of leaving it open.
 - A workspace with no files yet serves a handoff that says so, instead of a 404.
