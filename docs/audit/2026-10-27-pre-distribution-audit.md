@@ -43,6 +43,23 @@ Verdict: ready for the owner and a few people who will read the stated limits an
 | 3.1 Indentation | Done. |
 | 3.2 Landing intent line | No change, as planned. |
 
+Findings in the report that the phases above did not name, and how each closed:
+
+| Finding | State |
+|---|---|
+| S-3 share path in logs | Closed. `wrangler.jsonc` turns off request logs and traces; a test guards it; `PRIVACY.md` states the remaining boundary (account-level analytics, your own log exports). |
+| S-4 no rate limiting | Closed in code. A Cloudflare rate-limit binding, 120 per minute per caller address and route class; 429 when exceeded; tests. |
+| C-1 each upload re-reads every original | Closed. A file whose parse is cached is not re-read; the original is fetched only to parse again. One small cache read per file remains. |
+| C-5 browser test | Closed (`npm run browser-check`, 20 checks, in CI). |
+| A-2 site disclosure borders | Closed with the `--edge` token. |
+| Landing theme (open question 4) | Closed. Light and dark follow the system setting. |
+| Privacy line on the landing page was plain text | Closed. It links to `PRIVACY.md`. |
+| Uninstall steps missing | Closed. README "Uninstall". |
+| Backup and restore drill | Closed by decision: none, by design, because workspaces are temporary. README says so. |
+| Terms of service | Not needed: the project is self-host only (owner decision). |
+| Alerts | Not built. The app logs error names on the 500 path; alert rules are the operator's choice in their own account. |
+| Open questions 1 to 7 | All answered by the owner; none remain. |
+
 ---
 
 ## Phase 0 — Live-path fixes (before the next tester)

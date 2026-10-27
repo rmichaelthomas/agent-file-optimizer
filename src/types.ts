@@ -91,6 +91,8 @@ export type AppEnv = {
   FILES?: Env["FILES"];
   DB?: Env["DB"];
   ADMIN_TOKEN?: string;
+  /** Optional Cloudflare rate-limit binding. Absent in local tests and on copies that remove it. */
+  RATE_LIMITER?: RateLimit;
   APP_BASE_URL?: string;
   APP_ENV?: string;
 };
