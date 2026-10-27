@@ -4,7 +4,7 @@ This guide is for coding agents and people working on this repository with agent
 
 ## What this project is
 
-A Cloudflare Worker that turns uploaded files into a temporary workspace: originals, readable projections, a manifest, and a bearer share link with a fixed expiry. Storage is R2 for bytes and D1 for metadata. An in-memory mode runs without Cloudflare resources for tests and local use.
+A Cloudflare Worker that turns uploaded files into a temporary workspace: originals, readable projections, a manifest, and a bearer share link with a fixed expiry. Storage is R2 for bytes and D1 for metadata. When the R2 and D1 bindings are absent, as in the tests, the Worker falls back to in-memory storage. `npm run dev` uses local emulation of both bindings instead.
 
 It is software to be run by its operator. It is not a hosted service, and do not describe it as one.
 
@@ -15,7 +15,9 @@ It is software to be run by its operator. It is not a hosted service, and do not
 | `npm install` | Installs locked dependencies. Use `npm ci` in CI. |
 | `npm test` | Runs all Vitest suites. All tests use in-memory adapters and need no network. |
 | `npm run typecheck` | `tsc --noEmit` over `src/` and `tests/`. |
-| `npm run dev` | `wrangler dev` on local bindings. Apply migrations with `npx wrangler d1 migrations apply agent-file-optimizer --local` first. |
+| `npm run dev` | `wrangler dev` on local bindings. The schema is created on first use, so there is no migration step. |
+| `npm run deploy` | Logs in if needed, creates the admin token on first run, and deploys with the token in the same step. Saves the token to `~/.agent-file-optimizer-admin-token`. Refuses to replace a token it did not create. |
+| `npm run smoke` | Starts the Worker locally and runs create, upload, and read through a share link. No Cloudflare account. CI runs it. |
 | `npm run deploy:dry` | `wrangler deploy --dry-run`. Builds the bundle and lists bindings. Does not publish. |
 | `npm run site:check` | Static checks on `site/index.html`: metadata, no scripts or trackers, attribution, no unsupported claims. |
 | `npm run site:preview` | Serves `site/` on `127.0.0.1:8788`. |
@@ -24,11 +26,11 @@ Set `WRANGLER_SEND_METRICS=false` when running Wrangler in automation.
 
 ## Do not deploy without authorization
 
-Do not run `wrangler deploy` (without `--dry-run`), deploy the site, or create production D1 or R2 resources unless the repository owner has explicitly authorized that deployment in this session.
+Do not run `wrangler deploy` or `npm run deploy` (without `--dry-run`), deploy the site, or create production D1 or R2 resources unless the repository owner has explicitly authorized that deployment in this session.
 
 Current deployments, for reference:
 
-- API Worker `agent-file-optimizer`, with D1 `agent-file-optimizer` and R2 `agent-file-optimizer-files`. Deploy with `npx wrangler deploy`. Its admin token is a Wrangler secret named `ADMIN_TOKEN`.
+- API Worker `agent-file-optimizer`, with D1 `agent-file-optimizer` and R2 `agent-file-optimizer-files`. Deploy with `npm run deploy`, or with the Deploy to Cloudflare button. Its admin token is a Wrangler secret named `ADMIN_TOKEN`. Wrangler creates the bucket and database on first deploy, so `wrangler.jsonc` has no resource IDs.
 - The public site is published by GitHub Pages from `site/`, through `.github/workflows/pages.yml` on pushes to `main`. No Cloudflare resource is involved.
 
 `wrangler pages` is not used. In the Wrangler version pinned here, `wrangler pages project create` delegates to Worker deployment and redeploys the API Worker.
@@ -37,7 +39,10 @@ Current deployments, for reference:
 
 | Path | Role |
 | --- | --- |
-| `src/index.ts` | Worker entry: landing page, HTTP app, scheduled cleanup. |
+| `src/index.ts` | Worker entry: landing page, HTTP app, scheduled cleanup. Creates the schema on first use. |
+| `src/schema.ts` | The current D1 schema, idempotent. Mirrors `migrations/`. |
+| `scripts/deploy.mjs` | `npm run deploy`: login check, admin token, deploy with the token. |
+| `scripts/smoke.mjs` | `npm run smoke`: first-run check on local bindings. |
 | `src/app.ts` | HTTP routes, upload and repository import, revoke, share reads, request limits. |
 | `src/lifecycle.ts` | Tokens, projection refresh, purge, cleanup (`purgeWorkspace`, `settleWorkspace`, `expireDue`). |
 | `src/store.ts` | Workspace and file metadata: `MemoryWorkspaceStore` and `D1WorkspaceStore`. |
@@ -49,7 +54,7 @@ Current deployments, for reference:
 | `src/safety.ts` | Basic heuristic checks. Not malware scanning. |
 | `src/mime.ts` | Content type from extension when the upload declares nothing useful. |
 | `src/ui.ts` | The browser interface, rendered as one HTML string. |
-| `migrations/` | D1 schema. Apply in order. `0004` adds `purged_at`. |
+| `migrations/` | Record of schema changes for existing databases. A new migration needs a matching change in `src/schema.ts`. |
 | `site/` | Public static site for Cloudflare Pages. No build step. |
 
 ## API contract
@@ -84,6 +89,7 @@ Errors use `{ error, message }`. Status `410` means expired or revoked. Limits: 
 ## Tests
 
 - `tests/api.test.ts`, `tests/archive.test.ts`, `tests/parsers.test.ts`: API, ZIP, and parser behavior.
+- `tests/schema.test.ts`: schema bootstrap (idempotent, retries after failure), and the admin token gate, including a blank token.
 - `tests/lifecycle.test.ts`: retry after failed purge, expiry cleanup retry, revoke racing an upload, R2 batch deletion, request caps, content types through MCP.
 - `tests/mcp.test.ts`: JSON-RPC behavior, expiry, unsafe paths.
 - `tests/repository.test.ts`: URL parsing, redirect allowlist, size cap.

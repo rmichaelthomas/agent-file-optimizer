@@ -38,7 +38,7 @@ Each R2 bulk delete is limited to 1,000 keys. The app sends deletes in batches o
 
 - The share link is a bearer link. Anyone who has it can read the workspace until it expires or is revoked. Share it only with the agent or person you intend.
 - The upload token is shown once at creation. It can add files and revoke the workspace. If you lose it, the workspace will end at its expiry.
-- If your deployment sets `ADMIN_TOKEN`, only callers who present it can create workspaces. Without it, anyone who can reach your Worker can create workspaces and consume your storage quota. The admin token is never written to workspace metadata or logs.
+- If your deployment sets `ADMIN_TOKEN`, only callers who present it can create workspaces. Without it, anyone who can reach your Worker can create workspaces and consume your storage quota. A blank `ADMIN_TOKEN` refuses creation rather than opening the Worker. The admin token is never written to workspace metadata or logs. `npm run deploy` keeps a local copy in your home folder, at `~/.agent-file-optimizer-admin-token`; protect that file like any credential.
 - Responses are sent with `Cache-Control: no-store`, `X-Content-Type-Options: nosniff`, `Referrer-Policy: no-referrer`, and a restrictive Content-Security-Policy for projections and originals, so a shared file is not rendered as an active page in the browser.
 
 ## Processing

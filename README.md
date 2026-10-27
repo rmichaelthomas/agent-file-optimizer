@@ -49,22 +49,43 @@ Status key: **Works** means implemented and tested in this repository. **Basic**
 | Malware scanning | Not yet | The "basic check" is a few heuristics, not a malware verdict. |
 | External parser (OCR, Office, PDF engines) | Not yet | The adapter seam exists. It is off by default and not configured. |
 | Direct-to-storage uploads for large files | Not yet | Each file is capped at 10 MiB, and a request at 200 files and 50 MiB. |
-| Hosted instance | Not provided | You run your own copy. See [Self-hosting](#self-hosting). |
+| Hosted instance | Not provided | You run your own copy. See [Get started](#get-started). |
 
 Limits are published by the API at `GET /api/capabilities`.
 
-## Try it locally
+## Get started
 
-The project was developed and tested on Node.js 22.
+Three ways in. They run the same app; pick the one that matches your setup.
+
+### 1. One click, no terminal
+
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer)
+
+You need a Cloudflare account. Cloudflare copies this repository into your GitHub account, creates the R2 bucket and D1 database the app needs, asks you for an **admin token**, and deploys. Set the token. Without one, anyone who can reach your Worker can create workspaces on your account.
+
+### 2. One command from a clone
+
+You need Node.js 22 and a Cloudflare account.
+
+```sh
+git clone https://github.com/rmichaelthomas/agent-file-optimizer.git
+cd agent-file-optimizer
+npm install
+npm run deploy
+```
+
+`npm run deploy` logs you in if needed, creates the storage, creates an admin token, and deploys. The token and the code go out in the same deploy, so the Worker is never live without one. The token is saved in your home folder at `~/.agent-file-optimizer-admin-token` (mode 600). The script prints the path, never the token itself, and nothing is stored in the project folder. Run it again to redeploy with the same token.
+
+If your Worker already has an admin token and this computer has no saved copy, the script stops and tells you. It does not replace a token it did not create.
+
+### 3. Run it on your machine, with no account
 
 ```sh
 npm install
-npm test
-npm run typecheck
 npm run dev
 ```
 
-Open the local address Wrangler prints. Local mode uses in-memory storage, so workspaces disappear when the dev server restarts. That is fine for trying the app, and it is not a deployment.
+Open the local address Wrangler prints. Local mode uses a database and bucket on your machine, so nothing reaches Cloudflare and no token is needed. The data lives in `.wrangler/` and is not your deployment. `npm run smoke` runs the same first-run check that CI runs.
 
 The same flow works through the HTTP API:
 
@@ -87,53 +108,13 @@ curl -sS "$share_url/manifest.json"
 
 The upload token is returned only once, when the workspace is created. Keep it if you want to upload more files or revoke the link.
 
-## Self-hosting
+## Operating notes
 
-### Prerequisites
-
-- A Cloudflare account with Workers, R2, and D1 available.
-- Node.js 22 (the version used for development and CI), and the dependencies from `npm install`.
-- A decision about who may create workspaces. Without an admin token, anyone who can reach your Worker can create one.
-
-### Steps
-
-1. Create an R2 bucket and a D1 database. You can use the dashboard or Wrangler:
-
-   ```sh
-   npx wrangler r2 bucket create agent-file-optimizer-files
-   npx wrangler d1 create agent-file-optimizer
-   ```
-
-2. Put the D1 `database_id` from the output into `wrangler.jsonc`, replacing `replace-with-your-d1-database-id`. The R2 bucket name there must match the bucket you created.
-
-3. Apply the schema to the remote database:
-
-   ```sh
-   npx wrangler d1 migrations apply agent-file-optimizer --remote
-   ```
-
-4. Set an admin token. Only people who know it can create workspaces:
-
-   ```sh
-   npx wrangler secret put ADMIN_TOKEN
-   ```
-
-5. Optionally set `APP_BASE_URL` in `wrangler.jsonc` to your public address, for example when the Worker sits behind a custom domain.
-
-6. Check the bundle, then deploy:
-
-   ```sh
-   npm run deploy:dry
-   npx wrangler deploy
-   ```
-
-   `deploy:dry` builds the Worker and lists its bindings without publishing. It does not prove that your account, bucket, or database is set up correctly.
-
-Until both `DB` and `FILES` are bound, the Worker runs in memory mode. Memory mode loses everything when the isolate restarts, so do not use it for real handoffs.
-
-The scheduled cleanup runs from the `*/15 * * * *` cron in `wrangler.jsonc`. Keep that trigger enabled, or expired workspaces will only be removed when someone next requests them.
-
-Read [PRIVACY.md](PRIVACY.md) before pointing the app at anything sensitive.
+- **Admin token.** Set `ADMIN_TOKEN`, through the deploy button or `npm run deploy`. Send it as a Bearer token when creating a workspace. A blank value refuses creation rather than opening the Worker.
+- **Cleanup.** The scheduled cleanup runs from the `*/15 * * * *` trigger in `wrangler.jsonc`. Keep the trigger enabled, or expired workspaces are only removed when someone next requests them.
+- **Custom address.** Set `APP_BASE_URL` in `wrangler.jsonc` if the Worker sits behind your own domain.
+- **Storage.** The first deploy creates the schema itself. The `migrations/` folder is the record of how the schema changed, and it is not something you run by hand.
+- **Before real use.** Read [PRIVACY.md](PRIVACY.md), and review your Cloudflare log and retention settings. Share links are in the request path.
 
 ## How a share link works
 

@@ -10,6 +10,8 @@
     "typecheck": "tsc --noEmit",
     "types": "wrangler types",
     "deploy:dry": "wrangler deploy --dry-run",
+    "deploy": "node scripts/deploy.mjs",
+    "smoke": "node scripts/smoke.mjs",
     "site:check": "node scripts/check-site.mjs",
     "site:preview": "python3 -m http.server 8788 --directory site --bind 127.0.0.1"
   },
@@ -23,5 +25,12 @@
     "fflate": "0.8.3"
   },
   "license": "Apache-2.0",
-  "description": "A self-hosted temporary workspace that turns files into a clear handoff for AI agents and people."
+  "description": "A self-hosted temporary workspace that turns files into a clear handoff for AI agents and people.",
+  "cloudflare": {
+    "bindings": {
+      "ADMIN_TOKEN": {
+        "description": "A long random value. Anyone who sends it can create workspaces on your account. Generate one with: openssl rand -base64 32"
+      }
+    }
+  }
 }

@@ -29,5 +29,7 @@ jobs:
         run: npm run site:check
       - name: Worker bundle dry run
         run: npm run deploy:dry
+      - name: First-run smoke test (fresh clone, no Cloudflare login)
+        run: npm run smoke
       - name: Audit production dependencies
         run: npm audit --omit=dev --audit-level=high

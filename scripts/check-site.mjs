@@ -20,7 +20,8 @@ expect(!/<script[\s>]/i.test(html), "the site must not include scripts (no analy
 expect(!/<iframe[\s>]/i.test(html), "the site must not embed iframes");
 expect(!/(googletagmanager|analytics|doubleclick|facebook\.net|hotjar|mailchimp|newsletter)/i.test(html), "the site must not reference tracking or newsletter services");
 expect(!/(testimonial|waitlist|\$\d+\s*\/\s*month|users? (?:already|trust))/i.test(html), "the site must not contain testimonials, waitlists, pricing, or user counts");
-expect(!/href="https?:\/\/(?!github\.com\/rmichaelthomas\/|rmichaelthomas\.com)/.test(html), "outbound links should point only to the project repository or the author's site");
+// The one allowed third-party link is Cloudflare's deploy page, which clones this repository into the visitor's own account.
+expect(!/href="https?:\/\/(?!github\.com\/rmichaelthomas\/|rmichaelthomas\.com|deploy\.workers\.cloudflare\.com\/\?url=https:\/\/github\.com\/rmichaelthomas\/agent-file-optimizer")/.test(html), "outbound links should point only to the project repository, the author's site, or the Cloudflare deploy link for this repository");
 expect(/Built by <a href="https:\/\/rmichaelthomas\.com">R\. Michael Thomas<\/a>/.test(html), "the page must credit the builder with the agreed attribution line");
 expect(!/\bany file\b/i.test(html), "do not claim 'any file'");
 expect(!/malware[- ]scanned|zero[- ]retention guaranteed|private repos? supported/i.test(html), "do not make unsupported safety or support claims");

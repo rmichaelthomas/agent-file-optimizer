@@ -94,6 +94,8 @@ async function writesRacedRevocation(id: string, services: RuntimeServices): Pro
 }
 
 async function createWorkspace(request: Request, env: AppEnv, services: RuntimeServices): Promise<Response> {
+  // A blank secret (for example, an empty answer in the deploy form) must not leave the deployment open.
+  if (env.ADMIN_TOKEN === "") return errorResponse(503, "ADMIN_TOKEN is set but empty. Set a value, or remove the variable for local use.");
   if (env.ADMIN_TOKEN) {
     const provided = bearerToken(request);
     const valid = provided ? tokensMatch(await hashToken(provided), await hashToken(env.ADMIN_TOKEN)) : false;
