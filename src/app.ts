@@ -126,6 +126,8 @@ async function createWorkspace(request: Request, env: AppEnv, services: RuntimeS
     status: "ready",
   };
   await services.store.create(record);
+  // Write the projections now, so an empty workspace has a handoff that says so, instead of a 404.
+  await refreshProjections(record, services);
   const shareUrl = urlFor(request, env, `/s/${tokens.shareToken}`);
   const uploadUrl = urlFor(request, env, `/api/workspaces/${id}/upload`);
   const response: WorkspaceCreateResponse = {
