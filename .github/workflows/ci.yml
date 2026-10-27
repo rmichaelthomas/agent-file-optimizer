@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      WRANGLER_SEND_METRICS: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Tests
+        run: npm test
+      - name: Typecheck
+        run: npm run typecheck
+      - name: Public site checks
+        run: npm run site:check
+      - name: Worker bundle dry run
+        run: npm run deploy:dry
+      - name: Audit production dependencies
+        run: npm audit --omit=dev --audit-level=high

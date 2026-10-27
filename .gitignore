@@ -1,0 +1,12 @@
+node_modules/
+.wrangler/
+dist/
+.dev.vars
+.env
+.env.*
+.DS_Store
+
+# Local-only working material: operational logs and internal checkpoints are kept out of the public repository.
+work/
+outputs/
+docs/superpowers/

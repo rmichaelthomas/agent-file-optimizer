@@ -1,0 +1,67 @@
+{
+  "version": "0.1",
+  "workspace": {
+    "id": "00000000-0000-4000-8000-000000000000",
+    "intent": "structured-data",
+    "windowHours": 1,
+    "createdAt": "2026-01-01T12:00:00.000Z",
+    "expiresAt": "2026-01-01T13:00:00.000Z",
+    "status": "ready"
+  },
+  "privacy": {
+    "retention": "deleted-at-expiry-or-revocation",
+    "externalProcessing": false,
+    "originalsPreserved": true
+  },
+  "files": [
+    {
+      "path": "data/people.csv",
+      "contentType": "text/csv",
+      "bytes": 37,
+      "size": "37 B",
+      "sha256": "EXAMPLE-SHA256-NOT-A-REAL-HASH",
+      "uploadedAt": "2026-01-01T12:00:00.000Z",
+      "parser": "native-table",
+      "billingClass": "free-native",
+      "confidence": "high",
+      "warnings": [],
+      "safety": {
+        "status": "basic-check-passed",
+        "scanner": "basic-heuristics-only",
+        "signals": [],
+        "disclaimer": "This is not a malware verdict. It is a small local heuristic check; enhanced scanning is a separate, explicitly priced path."
+      },
+      "origin": {
+        "kind": "upload"
+      }
+    },
+    {
+      "path": "docs/note.md",
+      "contentType": "text/markdown",
+      "bytes": 31,
+      "size": "31 B",
+      "sha256": "EXAMPLE-SHA256-NOT-A-REAL-HASH",
+      "uploadedAt": "2026-01-01T12:00:00.000Z",
+      "parser": "native-text",
+      "billingClass": "free-native",
+      "confidence": "high",
+      "warnings": [],
+      "safety": {
+        "status": "basic-check-passed",
+        "scanner": "basic-heuristics-only",
+        "signals": [],
+        "disclaimer": "This is not a malware verdict. It is a small local heuristic check; enhanced scanning is a separate, explicitly priced path."
+      },
+      "origin": {
+        "kind": "upload"
+      }
+    }
+  ],
+  "projections": [
+    "handoff.md",
+    "manifest.json",
+    "tree.txt",
+    "content.md",
+    "content.jsonl"
+  ]
+}

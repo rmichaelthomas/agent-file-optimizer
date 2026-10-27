@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Agent File Optimizer: a readable, temporary handoff for files</title>
+  <meta name="description" content="Agent File Optimizer turns files into a temporary, readable workspace and a link you can share with an agent or collaborator. Self-hosted, open source, and deleted when the window ends.">
+  <meta name="author" content="R. Michael Thomas">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Agent File Optimizer">
+  <meta property="og:description" content="A self-hosted temporary workspace that turns files into a clear handoff for AI agents and people.">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Agent File Optimizer">
+  <meta name="twitter:description" content="A self-hosted temporary workspace that turns files into a clear handoff for AI agents and people.">
+  <link rel="icon" href="data:,">
+  <style>
+    :root {
+      --bg: #f7f4ee;
+      --panel: #ffffff;
+      --ink: #1f2328;
+      --muted: #4a5159;
+      --line: #d9d3c7;
+      --accent: #33541e;
+      --accent-soft: #e8efdc;
+      --warn: #6b4a00;
+      --warn-soft: #fbf1d9;
+      --focus: #0b4f9c;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root:not([data-theme="light"]) {
+        --bg: #15171a;
+        --panel: #1d2024;
+        --ink: #f0efe9;
+        --muted: #c4c8cf;
+        --line: #3a3f47;
+        --accent: #b9de8a;
+        --accent-soft: #263119;
+        --warn: #ffd98a;
+        --warn-soft: #2e2713;
+        --focus: #9ec8ff;
+      }
+    }
+    :root[data-theme="dark"] {
+      --bg: #15171a;
+      --panel: #1d2024;
+      --ink: #f0efe9;
+      --muted: #c4c8cf;
+      --line: #3a3f47;
+      --accent: #b9de8a;
+      --accent-soft: #263119;
+      --warn: #ffd98a;
+      --warn-soft: #2e2713;
+      --focus: #9ec8ff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+    a { color: var(--accent); text-underline-offset: 3px; }
+    a:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+    main { max-width: 760px; margin: 0 auto; padding: 0 20px; }
+    header.hero { padding: 64px 0 36px; }
+    .eyebrow { color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 12px; }
+    h1 { font-size: clamp(2rem, 6vw, 2.9rem); line-height: 1.12; letter-spacing: -.02em; margin: 0 0 18px; font-weight: 750; }
+    h2 { font-size: 1.35rem; line-height: 1.3; margin: 0 0 12px; }
+    h3 { font-size: 1.02rem; margin: 0 0 6px; }
+    p { margin: 0 0 14px; }
+    .lede { font-size: 1.15rem; color: var(--muted); max-width: 640px; }
+    section { padding: 28px 0; border-top: 1px solid var(--line); }
+    ol.steps, ul.plain { padding-left: 0; list-style: none; margin: 0; }
+    ol.steps { counter-reset: step; display: grid; gap: 12px; }
+    ol.steps li { counter-increment: step; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; }
+    ol.steps li::before { content: counter(step); position: absolute; left: 16px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: .9rem; }
+    ul.plain li { padding: 6px 0 6px 0; border-bottom: 1px dotted var(--line); }
+    ul.plain li:last-child { border-bottom: 0; }
+    .grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+    .card p:last-child { margin-bottom: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+    tr:last-child td { border-bottom: 0; }
+    .tag { display: inline-block; font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
+    .tag-works { background: var(--accent-soft); color: var(--accent); }
+    .tag-exp { background: var(--warn-soft); color: var(--warn); }
+    .tag-no { background: var(--line); color: var(--ink); }
+    .notice { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 14px 16px; border: 1px solid var(--line); }
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+    .button { display: inline-block; text-decoration: none; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; font-weight: 650; color: var(--accent); min-height: 44px; line-height: 24px; }
+    .button.primary { background: var(--accent); color: var(--bg); }
+    details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
+    summary { cursor: pointer; font-weight: 650; min-height: 32px; }
+    details p { margin: 10px 0 0; color: var(--muted); }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
+    footer { padding: 28px 0 56px; color: var(--muted); font-size: .95rem; border-top: 1px solid var(--line); }
+    @media (max-width: 620px) {
+      .grid { grid-template-columns: 1fr; }
+      header.hero { padding-top: 40px; }
+      table, tbody, tr, td { display: block; width: 100%; }
+      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+      tr { border-bottom: 1px solid var(--line); padding: 10px 12px; }
+      tr:last-child { border-bottom: 0; }
+      td { border: 0; padding: 3px 0; }
+      td:first-child { font-weight: 650; }
+    }
+    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+  </style>
+</head>
+<body>
+<main>
+  <header class="hero">
+    <p class="eyebrow">Open source · self-hosted · temporary</p>
+    <h1>Hand files to an agent without the setup.</h1>
+    <p class="lede">Agent File Optimizer turns a set of files into a temporary, readable workspace. You get one link. Whoever you share it with, human or agent, can read the originals and clear notes about them. When the window you chose ends, the link stops working and the content is deleted.</p>
+    <div class="actions">
+      <a class="button primary" href="https://github.com/rmichaelthomas/agent-file-optimizer">Read the code on GitHub</a>
+      <a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#self-hosting">Set up your own copy</a>
+    </div>
+    <p class="notice" style="margin-top:22px">There is no hosted service to sign up for. This project is software you run on your own Cloudflare account. Nothing here is a live public instance.</p>
+  </header>
+
+  <section aria-labelledby="what">
+    <h2 id="what">What it does</h2>
+    <p>Sharing a folder of mixed files with an agent usually means explaining each file, converting some of them, and remembering which copy is current. Agent File Optimizer does that preparation once. It keeps your originals, adds readable versions where it can, and gives you a link to share.</p>
+  </section>
+
+  <section aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="steps">
+      <li><h3>Add what to share</h3><p>Drop in files, choose a folder, or paste the address of a public GitHub repository.</p></li>
+      <li><h3>Choose a window</h3><p>Keep the link working for 1, 6, or 12 hours. You can also revoke it sooner.</p></li>
+      <li><h3>Share the link</h3><p>Copy the link and send it to the agent or person who needs the files. Anyone with the link can read the workspace until it ends.</p></li>
+    </ol>
+  </section>
+
+  <section aria-labelledby="arrives">
+    <h2 id="arrives">What the agent receives</h2>
+    <div class="grid">
+      <div class="card"><h3>Originals</h3><p>Every file as you added it, unchanged, under its original relative path.</p></div>
+      <div class="card"><h3>A handoff note</h3><p><code>handoff.md</code> says what the workspace is for, when it expires, and what to read first.</p></div>
+      <div class="card"><h3>A manifest</h3><p><code>manifest.json</code> lists each file with its hash, the parser used, a confidence level, and any warnings.</p></div>
+      <div class="card"><h3>Readable notes</h3><p><code>content.md</code> and <code>content.jsonl</code> hold text from supported formats, and <code>tree.txt</code> shows the layout.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="who">
+    <h2 id="who">Who it is for</h2>
+    <p>People who want a simple handoff to an agent or a collaborator, without remembering conversion commands, copying files around, or trusting a service with more than the window needs.</p>
+  </section>
+
+  <section aria-labelledby="supports">
+    <h2 id="supports">What it handles today, and where it stops</h2>
+    <table>
+      <thead><tr><th>Input</th><th>What you get</th><th>Status</th></tr></thead>
+      <tbody>
+        <tr><td>Text, Markdown, code, logs</td><td>Readable notes plus the original</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>JSON, CSV, TSV</td><td>Structured records in <code>content.jsonl</code></td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>HTML</td><td>Basic text extraction</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>ZIP archives</td><td>Members extracted within size and count limits</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>DOCX, PPTX, XLSX</td><td>Basic text; formatting, images, and some content may be missing</td><td><span class="tag tag-exp">Basic</span></td></tr>
+        <tr><td>PDF</td><td>Basic text where the file has text; scanned pages and complex layouts may be missing</td><td><span class="tag tag-exp">Basic</span></td></tr>
+        <tr><td>Images and scans</td><td>Kept as originals; no text recognition yet</td><td><span class="tag tag-no">Original only</span></td></tr>
+        <tr><td>Private repositories</td><td>Not supported yet</td><td><span class="tag tag-no">Not yet</span></td></tr>
+        <tr><td>Files over 10 MiB each</td><td>Refused for now</td><td><span class="tag tag-no">Not yet</span></td></tr>
+      </tbody>
+    </table>
+    <p style="margin-top:14px">A file that cannot be converted is still included as its original. The upload response and <code>manifest.json</code> flag it with a warning. The project does not scan files for malware. It runs a small set of heuristic checks and labels them that way.</p>
+  </section>
+
+  <section aria-labelledby="privacy">
+    <h2 id="privacy">Privacy and trust</h2>
+    <ul class="plain">
+      <li><strong>Short windows.</strong> A link lasts one, six, or twelve hours, or until you revoke it.</li>
+      <li><strong>Bearer links.</strong> Anyone who has the link can read the workspace. Treat it like a password for those hours.</li>
+      <li><strong>Deletion.</strong> When a workspace ends or is revoked, the app deletes its stored files and records. If a deletion fails, a scheduled cleanup retries.</li>
+      <li><strong>What is not covered.</strong> Your hosting provider's own backups, logs, and retention policies sit outside the app. The project does not promise secure erasure.</li>
+      <li><strong>No external processing by default.</strong> Parsing runs inside your Worker. An external parser exists only as an explicit, opt-in adapter.</li>
+    </ul>
+    <p style="margin-top:14px">The full, detailed version is in <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md">PRIVACY.md</a>.</p>
+  </section>
+
+  <section aria-labelledby="use">
+    <h2 id="use">How to use it</h2>
+    <details open>
+      <summary>Try it on your computer</summary>
+      <p>Clone the repository, run <code>npm install</code>, then <code>npm run dev</code>. Open the local address Wrangler prints. Local mode uses simulated storage, which is fine for trying things out.</p>
+    </details>
+    <details>
+      <summary>Run your own copy on Cloudflare</summary>
+      <p>You need a Cloudflare account, an R2 bucket, and a D1 database. The README walks through the Wrangler steps, the admin token that keeps strangers from creating workspaces, and the dry run before deploying.</p>
+    </details>
+    <details>
+      <summary>Connect an agent</summary>
+      <p>Give the agent the share link. It should read <code>handoff.md</code> first. The link also exposes a read-only MCP endpoint for clients that support it. That endpoint is experimental.</p>
+    </details>
+    <div class="actions"><a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#readme">Read the README</a></div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap-footer" style="max-width:760px;margin:0 auto;padding:0 20px">
+    <p>Agent File Optimizer is open source under the Apache License 2.0. Built by <a href="https://rmichaelthomas.com">R. Michael Thomas</a>.</p>
+  </div>
+</footer>
+</body>
+</html>
