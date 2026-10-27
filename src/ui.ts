@@ -12,7 +12,8 @@ export function renderLandingPage(): string {
   <title>Agent File Optimizer</title>
   <link rel="icon" href="data:,">
   <style>
-    :root { color-scheme: dark; --bg:#111318; --panel:#1b1e27; --line:#3a4152; --edge:#7c869e; --ink:#f4f5f7; --muted:#c3c9d6; --accent:#b9f27c; --accent-ink:#17210f; --focus:#ffffff; --warn:#ffd27a; }
+    :root { color-scheme: dark light; --bg:#111318; --panel:#1b1e27; --field:#101218; --line:#3a4152; --edge:#7c869e; --ink:#f4f5f7; --muted:#c3c9d6; --accent:#b9f27c; --accent-ink:#17210f; --accent-soft:#202719; --focus:#ffffff; --warn:#ffd27a; }
+    @media (prefers-color-scheme: light) { :root { --bg:#f7f4ee; --panel:#ffffff; --field:#ffffff; --line:#d9d3c7; --edge:#857d6e; --ink:#1f2328; --muted:#4a5159; --accent:#33541e; --accent-ink:#ffffff; --accent-soft:#e8efdc; --focus:#0b4f9c; --warn:#8a5a00; } }
     * { box-sizing:border-box; }
     body { margin:0; background:var(--bg); color:var(--ink); font:16px/1.55 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; }
     main { max-width:760px; margin:0 auto; padding:8vh 16px 10vh; }
@@ -23,11 +24,11 @@ export function renderLandingPage(): string {
     h2 { font-size:1rem; margin:0 0 4px; }
     label { display:block; color:var(--muted); font-size:.92rem; margin:16px 0 7px; }
     .hint { color:var(--muted); font-size:.85rem; }
-    select,input,button { width:100%; min-height:44px; border:1px solid var(--edge); border-radius:10px; background:#101218; color:var(--ink); padding:10px 12px; font:inherit; }
+    select,input,button { width:100%; min-height:44px; border:1px solid var(--edge); border-radius:10px; background:var(--field); color:var(--ink); padding:10px 12px; font:inherit; }
     input:focus-visible, select:focus-visible, button:focus-visible, .drop:focus-within { outline:3px solid var(--focus); outline-offset:2px; }
     .drop-row { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
-    .drop { position:relative; display:grid; place-items:center; min-height:120px; text-align:center; border:1px dashed #7c869e; border-radius:12px; padding:18px; cursor:pointer; color:var(--ink); }
-    .drop:hover,.drop.is-over { border-color:var(--accent); background:#202719; }
+    .drop { position:relative; display:grid; place-items:center; min-height:120px; text-align:center; border:1px dashed var(--edge); border-radius:12px; padding:18px; cursor:pointer; color:var(--ink); }
+    .drop:hover,.drop.is-over { border-color:var(--accent); background:var(--accent-soft); }
     .drop input { position:absolute; width:1px; height:1px; opacity:0; overflow:hidden; pointer-events:none; }
     .drop strong { display:block; }
     .drop span { display:block; color:var(--muted); margin-top:4px; font-size:.9rem; }

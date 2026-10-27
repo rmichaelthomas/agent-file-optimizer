@@ -6,6 +6,8 @@
 - A blank `ADMIN_TOKEN` now refuses workspace creation instead of leaving it open.
 - A workspace with no files yet serves a handoff that says so, instead of a 404.
 - Opening a share link in a browser shows a readable page. Agents and `curl` still receive the Markdown unchanged.
+- The link-creation page follows the system light or dark setting.
+- Per-request logs and traces are off in `wrangler.jsonc`, so a share token is not stored in Workers Logs. The app's own error lines stay on.
 - The landing page sends framing, content-type, and referrer protections.
 - Internal errors reach the 500 handler and are logged by route class only, never a token.
 - Uploads that overlap no longer risk a missing or stale handoff.
