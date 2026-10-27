@@ -114,7 +114,22 @@ The upload token is returned only once, when the workspace is created. Keep it i
 - **Cleanup.** The scheduled cleanup runs from the `*/15 * * * *` trigger in `wrangler.jsonc`. Keep the trigger enabled, or expired workspaces are only removed when someone next requests them.
 - **Custom address.** Set `APP_BASE_URL` in `wrangler.jsonc` if the Worker sits behind your own domain.
 - **Storage.** The first deploy creates the schema itself. The `migrations/` folder is the record of how the schema changed, and it is not something you run by hand.
-- **Before real use.** Read [PRIVACY.md](PRIVACY.md), and review your Cloudflare log and retention settings. Share links are in the request path.
+- **Rate limit.** `wrangler.jsonc` binds a rate limiter: 120 requests a minute per caller address, counted separately for share reads and API calls. Change `limit` there, or remove the `ratelimits` entry to turn it off.
+- **Logs.** Per-request logs and traces are off in `wrangler.jsonc`, because a logged URL would contain a share token. Leave them off. Cloudflare's own account-level analytics are outside this repository.
+- **Backups.** There is no backup or restore, on purpose. Workspaces are temporary and are deleted when their window ends, so there is nothing to recover. Cloudflare may keep its own backups of the database and bucket under its policies.
+- **Before real use.** Read [PRIVACY.md](PRIVACY.md).
+
+### Uninstall
+
+Delete everything this created, in your own Cloudflare account. This removes all workspaces and cannot be undone.
+
+```sh
+npx wrangler delete agent-file-optimizer
+npx wrangler d1 delete agent-file-optimizer
+npx wrangler r2 bucket delete agent-file-optimizer-files
+```
+
+The bucket must be empty to be deleted. Revoke or wait out any open workspaces first, or empty it from the Cloudflare dashboard. If you used the deploy button, also delete the repository copy it made in your GitHub account. Remove `~/.agent-file-optimizer-admin-token` if `npm run deploy` saved one.
 
 ## How a share link works
 

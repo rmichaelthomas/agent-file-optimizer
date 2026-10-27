@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="claude:viewport-fit-sides" content="cover">
+<title>Agent File Optimizer audit</title>
+<style>
+  /* Layout: one reading column with a sticky section rail on wide screens.
+     Palette and type are taken from the product's own dark site tokens. */
+  :root {
+    --bg: #15171a; --panel: #1d2024; --ink: #f0efe9; --muted: #c4c8cf;
+    --line: #3a3f47; --accent: #b9de8a; --accent-soft: #263119;
+    --warn: #ffd98a; --warn-soft: #2e2713; --bad: #ffb4a8; --bad-soft: #3a1f1b; --focus: #9ec8ff;
+    --display: "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+    --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    color-scheme: dark;
+  }
+  :root[data-theme="light"] { --bg:#f7f4ee; --panel:#ffffff; --ink:#1f2328; --muted:#4a5159; --line:#8a8f96; --accent:#33541e; --accent-soft:#e8efdc; --warn:#6b4a00; --warn-soft:#fbf1d9; --bad:#8a2b1c; --bad-soft:#f6e2de; --focus:#0b4f9c; color-scheme: light; }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  a { color: var(--accent); text-underline-offset: 3px; overflow-wrap: anywhere; }
+  :focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+  .wrap { display: grid; grid-template-columns: 1fr; gap: 0; max-width: 1080px; margin: 0 auto; padding-block: 48px 72px; }
+  @media (min-width: 980px) { .wrap { grid-template-columns: 180px minmax(0, 72ch); column-gap: 56px; } nav.rail { position: sticky; top: 24px; align-self: start; } }
+  nav.rail { font: 13px/1.4 var(--mono); color: var(--muted); padding-block: 4px; }
+  nav.rail ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  @media (min-width: 980px) { nav.rail ol { flex-direction: column; flex-wrap: nowrap; gap: 8px; } }
+  nav.rail a { color: var(--muted); text-decoration: none; } nav.rail a:hover { color: var(--ink); }
+  main { min-width: 0; }
+  .eyebrow { font: 600 12px/1.4 var(--mono); letter-spacing: .12em; text-transform: uppercase; color: var(--accent); margin: 0 0 14px; }
+  h1 { font: 500 clamp(2rem, 5.4vw, 3.2rem)/1.08 var(--display); letter-spacing: -.01em; margin: 0 0 18px; text-wrap: balance; }
+  h2 { font: 500 1.55rem/1.25 var(--display); margin: 56px 0 14px; text-wrap: balance; }
+  h3 { font: 600 1.02rem/1.35 var(--body); margin: 24px 0 8px; }
+  p { margin: 0 0 14px; max-width: 72ch; }
+  .lede { font-size: 1.12rem; color: var(--muted); }
+  .verdict { font: 400 clamp(1.35rem, 3vw, 1.85rem)/1.3 var(--display); border-left: 3px solid var(--accent); padding-left: 18px; margin: 28px 0; }
+  .meta { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin: 26px 0 8px; }
+  .meta div { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+  .meta b { display: block; font: 600 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .mono { font-family: var(--mono); font-size: .9em; }
+  .chip { display: inline-block; font: 700 11px/1 var(--mono); letter-spacing: .06em; border-radius: 999px; padding: 4px 9px; white-space: nowrap; border: 1px solid transparent; }
+  .p0 { background: var(--bad-soft); color: var(--bad); } .p1 { background: var(--warn-soft); color: var(--warn); }
+  .p2 { background: var(--accent-soft); color: var(--accent); } .p3 { background: var(--panel); color: var(--muted); border-color: var(--line); }
+  .ok { background: var(--accent-soft); color: var(--accent); } .done { background: var(--accent-soft); color: var(--accent); }
+  .partial { background: var(--warn-soft); color: var(--warn); } .missing { background: var(--bad-soft); color: var(--bad); }
+  .tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; margin: 14px 0 22px; }
+  table { width: 100%; border-collapse: collapse; font-size: .92rem; min-width: 560px; }
+  th, td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  th { font: 600 11px/1.3 var(--mono); letter-spacing: .07em; text-transform: uppercase; color: var(--muted); background: var(--panel); }
+  tr:last-child td { border-bottom: 0; }
+  td.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .score { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; margin: 16px 0 6px; }
+  .tile { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+  .tile .n { font: 500 2.4rem/1 var(--display); color: var(--ink); }
+  .tile .n small { font: 600 .9rem var(--mono); color: var(--muted); }
+  .tile .t { font: 600 .95rem/1.3 var(--body); margin: 8px 0 4px; }
+  .tile .r { color: var(--muted); font-size: .9rem; margin: 0; }
+  ol.fix { padding-left: 0; list-style: none; counter-reset: f; display: grid; gap: 10px; }
+  ol.fix li { counter-increment: f; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px 12px 52px; position: relative; }
+  ol.fix li::before { content: counter(f); position: absolute; left: 14px; top: 12px; font: 600 13px/1.4 var(--mono); color: var(--accent); }
+  .finding { border-top: 1px solid var(--line); padding: 16px 0; }
+  .finding .id { font: 600 12px/1 var(--mono); color: var(--muted); margin-right: 8px; }
+  .finding .loc { font: 12px/1.5 var(--mono); color: var(--muted); display: block; margin: 6px 0; overflow-wrap: anywhere; }
+  .finding .fix { margin: 6px 0 0; }
+  .finding .fix::before { content: "Fix · "; font: 600 12px/1 var(--mono); color: var(--accent); }
+  .ok-row { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+  .ok-row b { color: var(--accent); }
+  dl.budget { display: grid; grid-template-columns: minmax(150px, max-content) 1fr; gap: 8px 18px; margin: 14px 0; }
+  dl.budget dt { font: 600 13px/1.5 var(--mono); color: var(--accent); }
+  dl.budget dd { margin: 0; color: var(--muted); }
+  .persona { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin: 14px 0; }
+  .persona h3 { margin-top: 0; }
+  .persona .split { display: grid; grid-template-columns: 1fr; gap: 10px; }
+  @media (min-width: 620px) { .persona .split { grid-template-columns: 1fr 1fr; } }
+  .persona .lbl { font: 600 11px/1.3 var(--mono); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 4px; }
+  .delight .lbl { color: var(--accent); } .stall .lbl { color: var(--warn); }
+  pre { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px; overflow-x: auto; font: 12.5px/1.55 var(--mono); color: var(--muted); margin: 12px 0 18px; max-width: 100%; }
+  .swatch { display: inline-block; width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--line); vertical-align: -2px; margin-right: 6px; }
+  .brief { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 18px; margin: 14px 0 26px; }
+  .guard { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 14px 0; }
+  .retract { border-left: 3px solid var(--bad); background: var(--bad-soft); padding: 12px 14px; border-radius: 0 8px 8px 0; margin: 10px 0; }
+  footer { margin-top: 64px; border-top: 1px solid var(--line); padding-top: 18px; color: var(--muted); font-size: .9rem; }
+  @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+<div class="wrap">
+<nav class="rail" aria-label="Sections"><ol>
+  <li><a href="#verdict">Verdict</a></li>
+  <li><a href="#scorecard">Scorecard</a></li>
+  <li><a href="#fix-first">Fix first ten</a></li>
+  <li><a href="#distribution">Distribution</a></li>
+  <li><a href="#security">Security and privacy</a></li>
+  <li><a href="#code">Code and scale</a></li>
+  <li><a href="#ux">UX and copy</a></li>
+  <li><a href="#a11y">Accessibility</a></li>
+  <li><a href="#visual">Visual direction</a></li>
+  <li><a href="#personas">Personas</a></li>
+  <li><a href="#plan">Execution plan</a></li>
+  <li><a href="#briefs">Mockup briefs</a></li>
+  <li><a href="#gtm">GTM and checklist</a></li>
+  <li><a href="#method">Method and evidence</a></li>
+</ol></nav>
+
+<main>
+<p class="eyebrow">Product audit · pre-distribution · 27 Oct 2026</p>
+<h1>Agent File Optimizer, audited before its first public release</h1>
+<p class="lede">A small Cloudflare Worker that turns files into a temporary, readable link for an agent or a collaborator. The code is careful about secrets, storage, and deletion. The first-run path, the landing page's protection, and the public setup instructions are where it is not yet ready for strangers.</p>
+
+<div class="ok-row"><b>Status: closed, 27 Oct 2026.</b> This page is the report as written against tree <span class="mono">a8122e9</span>; its findings describe that tree, not today's. Every finding has since been fixed or decided by the owner, and none remain open. How each one closed is recorded in <span class="mono">docs/audit/2026-10-27-pre-distribution-audit.md</span> in the repository. A copy of this report is kept beside it.</div>
+<div class="meta">
+  <div><b>Repository</b>rmichaelthomas/agent-file-optimizer<br><span class="mono">main @ a8122e9</span></div>
+  <div><b>Size</b>about 2,200 lines of source across 17 modules, 11 test files</div>
+  <div><b>Toolchain</b>40 of 40 tests pass · typecheck clean · site checks pass · dry run ok · 0 audit findings</div>
+  <div><b>Findings</b>0 live P0 · 2 live P1 · 3 build-debt P1 · further P2 and P3 items listed by section</div>
+</div>
+
+<section id="verdict">
+<h2>Verdict</h2>
+<p class="verdict">Ready now for its owner and a few self-hosters who will read the stated limits. Ready for a small public group of self-hosters after Phase 0 and Phase 1. Not ready for strangers using a hosted instance, and the project does not offer one.</p>
+<p>What is genuinely done: the storage model is careful. Tokens are 256-bit and stored only as hashes. Revocation and expiry turn access off before deleting content, and a failed deletion is retried. Public-repository import is allowlisted. The privacy document says what is not promised. The owner's own deployment has its admin gate working: a request without the token returns 401, and the full create, upload, read, MCP, and revoke cycle passed against the live Worker.</p>
+<p>Three things in deployed code matter regardless of distribution. The landing page, where the admin token is typed, has no framing protection. Its inputs fail the non-text contrast requirement. And server errors are returned without being logged, so an outage would leave nothing to read.</p>
+</section>
+
+<section id="scorecard">
+<h2>Scorecard</h2>
+<p>Each number judges the tree, not the effort behind it.</p>
+<div class="score">
+  <div class="tile"><div class="n">4<small> / 5</small></div><p class="t">Core engineering</p><p class="r">Strict TypeScript, zero <span class="mono">any</span>, 40 passing tests. The Worker entry itself is untested, and no browser test runs in CI.</p></div>
+  <div class="tile"><div class="n">3<small> / 5</small></div><p class="t">Security of the deployed surface</p><p class="r">Sound token and hashing design. The landing lacks framing and content-security headers, and there is no rate limiting.</p></div>
+  <div class="tile"><div class="n">3<small> / 5</small></div><p class="t">Performance and scale</p><p class="r">Every upload re-reads every original. The purge job has no batch bound. Both are fine at 10 files, not at 200.</p></div>
+  <div class="tile"><div class="n">3<small> / 5</small></div><p class="t">Accessibility</p><p class="r">Labels, landmarks, live region, focus, and reduced motion are in place. Input boundaries fail WCAG 1.4.11.</p></div>
+  <div class="tile"><div class="n">3<small> / 5</small></div><p class="t">UX flows</p><p class="r">The create flow is clear and recovers well from failure. The first local run fails, and a human recipient sees raw Markdown.</p></div>
+  <div class="tile"><div class="n">3<small> / 5</small></div><p class="t">Visual identity</p><p class="r">Calm, restrained, and plain. The landing and the site are two different systems, and the landing has no light theme.</p></div>
+  <div class="tile"><div class="n">3<small> / 5</small></div><p class="t">Copy and naming</p><p class="r">Plain in the form and the site. Jargon in the README's first line, in one error message, and in the handoff's machine formatting.</p></div>
+  <div class="tile"><div class="n">2<small> / 5</small></div><p class="t">Distribution readiness</p><p class="r">A fresh clone does not reach a working upload. The README omits login and local migrations, and the committed database ID belongs to the owner.</p></div>
+  <div class="tile"><div class="n">2<small> / 5</small></div><p class="t">GTM narrative</p><p class="r">A clear positioning and honest limits exist. No changelog, no release tags, no launch material beyond the site.</p></div>
+</div>
+</section>
+
+<section id="fix-first">
+<h2>Fix first ten</h2>
+<p>Deployed code comes first, regardless of distribution.</p>
+<ol class="fix">
+  <li><b>Add framing and content-security headers to the landing page.</b> The admin-token field can be overlaid in a frame. <span class="mono">src/index.ts:9</span></li>
+  <li><b>Raise input and disclosure boundaries to 3:1.</b> Fields are hard to see on the live page, and the site's disclosure controls fail the same test.</li>
+  <li><b>Log server errors without content.</b> A 500 currently leaves no trace. <span class="mono">src/app.ts:328–332</span></li>
+  <li><b>Bound the purge job and pace it.</b> One run loads every pending workspace. <span class="mono">src/store.ts</span>, <span class="mono">src/lifecycle.ts expireDue</span></li>
+  <li><b>Make the README's local start work from a fresh clone.</b> Add the local migration step; without it the first request fails.</li>
+  <li><b>Add the login step to self-hosting.</b> Remote steps run before any login is mentioned.</li>
+  <li><b>Decide what the public config should hold.</b> The committed D1 ID is the owner's; forks deploy to an ID they do not own. Owner decision.</li>
+  <li><b>Serve the handoff to people as readable HTML.</b> Owner decision on the format contract; agents keep Markdown.</li>
+  <li><b>Test the Worker entry and a real browser path in CI.</b> The landing's headers and flow are currently untested.</li>
+  <li><b>Make projection refresh safe under concurrent uploads.</b> Versioned prefixes, so a reader never sees the gap. <span class="mono">src/lifecycle.ts:92–110</span></li>
+</ol>
+</section>
+
+<section id="findings">
+<h2>Findings by section</h2>
+
+<section id="distribution">
+<h3>Distribution readiness</h3>
+<p>The fresh-clone path was run in this audit. It fails at the first request, and the README gives no hint of the missing step.</p>
+<div class="finding"><span class="chip p1">P1</span> <span class="id">D-1</span><strong>Build debt.</strong> The local quick start fails on a fresh clone. The first request returns 500 with <span class="mono">no such table: workspaces</span>, because no migration is applied locally.<span class="loc">README.md · "Try it locally" (npm run dev, around line 64)</span><p class="fix">Add <span class="mono">npx wrangler d1 migrations apply agent-file-optimizer --local</span> after <span class="mono">npm install</span>.</p></div>
+<div class="finding"><span class="chip p1">P1</span> <span class="id">D-2</span><strong>Build debt.</strong> Self-hosting runs remote commands without a login step.<span class="loc">README.md · "Self-hosting" steps 1–3 (around lines 100–112)</span><p class="fix">Add <span class="mono">npx wrangler login</span> before step 1, and say that the token belongs to the operator's account.</p></div>
+<div class="finding"><span class="chip p1">P1</span> <span class="id">D-3</span><strong>Build debt.</strong> <span class="mono">wrangler.jsonc</span> holds the owner's real D1 ID, while the README says to replace the placeholder. A forker's first deploy targets a database their account does not own.<span class="loc">wrangler.jsonc:22 · README.md:107</span><p class="fix">Owner decision (see open questions). Either document replacement or keep the real ID in an untracked local override.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">D-4</span><strong>Build debt.</strong> No release tags, no CHANGELOG, no issue templates. <span class="mono">git tag</span> and <span class="mono">gh release list</span> both return nothing.<span class="loc">repository root</span><p class="fix">Tag <span class="mono">v0.1.0</span> on <span class="mono">a8122e9</span>, add CHANGELOG.md and an issue template.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">D-5</span><strong>Build debt.</strong> The README's first line uses a term the reader does not know: "agent context workspace".<span class="loc">README.md:3</span><p class="fix">Use: "Turn files into a temporary, readable link for an agent or a collaborator." Owner approves the wording.</p></div>
+<div class="ok-row"><b>OK.</b> The repository is public with a description and topics. The license is Apache-2.0 and matches the owner's public projects. CI passed on the initial commit and on the Pages commit. The Pages site is live with no custom domain.</div>
+</section>
+
+<section id="security">
+<h3>Security and privacy</h3>
+<p>Deployed surface first. Severity words are used only for code that is reachable today.</p>
+<div class="finding"><span class="chip p1">P1</span> <span class="id">S-1</span><strong>Live.</strong> The landing page sends no Content-Security-Policy, no <span class="mono">x-frame-options</span>, and no <span class="mono">frame-ancestors</span>. The admin-token field on that page can be placed inside a frame that an attacker overlays on something the owner clicks. The live response carried only <span class="mono">content-type</span> and <span class="mono">cache-control</span>.<span class="loc">src/index.ts:9</span><p class="fix">Add the headers listed in plan task 0.1. Verify with a GET to the live root after the owner authorizes a deploy.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">S-2</span><strong>Live.</strong> Server errors are returned as a generic 500 with no log line. A failing deployment leaves nothing to inspect except Cloudflare's own request records.<span class="loc">src/app.ts:328–332</span><p class="fix">Log the route prefix and the error name, never the full path (share paths carry bearer tokens).</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">S-3</span><strong>Live, not verified.</strong> The share token is part of the URL path, and observability is enabled. Whether Cloudflare's request logs keep that path was not checked. <span class="mono">redact_query_string</span> covers only the query.<span class="loc">wrangler.jsonc:7–11</span><p class="fix">Owner decision on log policy (open question 5). Document the boundary in PRIVACY.md either way.</p></div>
+<div class="finding"><span class="chip p2">S-4</span> <span class="id">S-4</span><strong>Live.</strong> No rate limiting on upload, creation, or share reads. A grep of <span class="mono">src/</span> for rate limiting returns nothing. The admin gate limits creation on the owner's deployment; share reads are unthrottled.<span class="loc">src/ (absence, grep count 0)</span><p class="fix">Add a Cloudflare rate-limiting rule on <span class="mono">/s/*</span> and on <span class="mono">/api/*</span>. Owner applies it in the dashboard.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">S-5</span><strong>Live, not verified.</strong> Archive member selection trusts declared sizes. A ZIP whose member declares a small size can inflate far beyond the limit. Only the upload token holder can trigger it.<span class="loc">src/parsers/native.ts:229–241</span><p class="fix">Plan task 1.6: count inflated bytes and add the test.</p></div>
+<div class="finding"><span class="chip p3">P3</span> <span class="id">S-6</span><strong>Build debt.</strong> GitHub Actions are pinned to major-version tags, not commit SHAs.<span class="loc">.github/workflows/ci.yml:17–18 · pages.yml:25–32</span><p class="fix">Pin to 40-character SHAs with the tag in a comment.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">S-7</span><strong>Build debt.</strong> The vulnerability policy points to GitHub's private reporting, which is not confirmed as enabled.<span class="loc">SECURITY.md (the "Report a vulnerability" option)</span><p class="fix">Owner enables the setting, or changes the contact.</p></div>
+<div class="ok-row"><b>OK.</b> No secrets in git history (pattern scan of every commit, empty). No ignored secret files tracked. The admin token is a Wrangler secret, and an unauthenticated create returns 401 on the live Worker. Tokens are 32 random bytes and stored as SHA-256 hashes. Share responses set <span class="mono">content-security-policy: default-src 'none'</span>, <span class="mono">nosniff</span>, and <span class="mono">noindex</span>. Repository redirects are limited to GitHub hosts. npm audit reports 0 vulnerabilities for production dependencies.</div>
+</section>
+
+<section id="code">
+<h3>Code quality, speed, scale</h3>
+<p>Toolchain, run in this audit: 40 tests passed across 11 files in 0.36 s, typecheck clean with <span class="mono">strict: true</span>, site checks passed, dry run built a 101,656-byte bundle.</p>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">C-1</span><strong>Live.</strong> Each upload re-reads every original in the workspace to rebuild projections, so the cost grows with the number of files already stored.<span class="loc">src/lifecycle.ts:92–95 (blobs.get per record)</span><p class="fix">Cache the per-file projection fragment and rebuild only the bundle index, or pass only changed records.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">C-2</span><strong>Live.</strong> Projection rewrite deletes the whole projections prefix, then writes it back. A reader during that window gets a 404 for <span class="mono">handoff.md</span>. Two uploads can interleave.<span class="loc">src/lifecycle.ts:107–110</span><p class="fix">Plan task 2.1: versioned prefix, pointer updated last.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">C-3</span><strong>Live.</strong> The purge job lists every pending workspace in one query, then purges all of them in one invocation. A backlog would exceed the Worker's per-invocation subrequest budget; the leftovers wait for later runs, but nothing bounds the first run.<span class="loc">src/store.ts listNeedingPurge · src/lifecycle.ts expireDue</span><p class="fix">Plan task 2.2: <span class="mono">LIMIT 200</span> and a test with 500 expired workspaces.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">C-4</span><strong>Build debt.</strong> The Worker entry is not imported by any test. The landing route, the header behavior, and the scheduled handler are covered only by manual runs.<span class="loc">tests/ (no file imports src/index.ts)</span><p class="fix">Plan task 1.4.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">C-5</span><strong>Build debt.</strong> <span class="mono">tests/ui.test.ts</span> checks for strings in the HTML (<span class="mono">toContain("webkitdirectory")</span>). It proves the text exists, not that the flow works. No browser test exists in the repository.<span class="loc">tests/ui.test.ts:6–16</span><p class="fix">Keep the string test; add the browser check from this audit's scratchpad as <span class="mono">tests/browser/</span>.</p></div>
+<div class="finding"><span class="chip p3">P3</span> <span class="id">C-6</span><strong>Live, copy only.</strong> The request entry is indented one level too deep, and the 500 path has no log.<span class="loc">src/app.ts:299</span><p class="fix">Fix the indent (plan task 3.1).</p></div>
+<dl class="budget">
+  <dt>Worker bundle</dt><dd>101,656 bytes, 26.27 KiB gzip (dry run, this tree).</dd>
+  <dt>Upload per request</dt><dd>200 files and 50 MiB, both enforced. Each file 10 MiB. Parsing happens in memory.</dd>
+  <dt>Per-upload R2 reads</dt><dd>n originals for n files already stored, so 200 reads at the cap. Estimated, not measured on Cloudflare.</dd>
+  <dt>Cron purge</dt><dd>Unbounded batch today. Target: 200 workspaces per run, every 15 minutes, so a backlog of 2,000 clears in 2.5 hours.</dd>
+  <dt>Share read</dt><dd>One R2 read and no database query for projections. Unthrottled (S-4).</dd>
+</dl>
+<div class="ok-row"><b>OK.</b> Strict TypeScript with no <span class="mono">any</span> in source. Dependencies pinned to exact versions in <span class="mono">package.json</span>. CI uses <span class="mono">npm ci</span> against the lockfile. Migrations are additive and in order; <span class="mono">0004</span> adds the purge marker with a default of null.</div>
+</section>
+
+<section id="ux">
+<h3>UX flows and copy</h3>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">U-1</span><strong>Live.</strong> A person who opens a share link sees raw Markdown: <span class="mono">**1**</span>, backtick code spans, <span class="mono">## headings</span>, and an ISO timestamp. Verified in Chrome against local dev; screenshot in the audit scratchpad.<span class="loc">src/projections.ts (handoff text) · served as text/markdown</span><p class="fix">Owner decision on format (open question 3). Agents keep Markdown.</p></div>
+<div class="finding"><span class="chip p3">P3</span> <span class="id">U-2</span><strong>Live, copy.</strong> The 413 message for oversize files uses internal terms ("direct-upload/scanned path in a later adapter").<span class="loc">src/app.ts:160</span><p class="fix">Plan task 0.3.</p></div>
+<div class="ok-row"><b>OK.</b> The create flow recovers well. A failed upload keeps the link, offers "Try adding the content again", discards a stale workspace when inputs change, and revokes it. Verified in Chrome with a real 413.</div>
+<h3>Error copy, rated 1 to 5</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Message (verbatim)</th><th>Where</th><th>Rating</th><th>Note</th></tr></thead>
+  <tbody>
+    <tr><td>Choose files, a folder, or a public GitHub repository first.</td><td>landing</td><td class="num">5</td><td>Says what to do next.</td></tr>
+    <tr><td>Enter a public GitHub repository address, like https://github.com/owner/repository.</td><td>landing</td><td class="num">5</td><td>Shows the expected shape.</td></tr>
+    <tr><td>The link was created, but adding your content failed: … The link shows nothing until content is added. Press the button to try the same content again, or revoke the link.</td><td>landing</td><td class="num">4</td><td>Explains state and recovery. Long, but the reader needs all of it.</td></tr>
+    <tr><td>This MVP accepts files up to 10 MiB each. Larger files will use the direct-upload/scanned path in a later adapter.</td><td>API 413</td><td class="num">2</td><td>"MVP" and "adapter" are internal words. Plan 0.3.</td></tr>
+    <tr><td>Access is off, but some content could not be deleted yet. Revoke again to retry; scheduled cleanup will also retry.</td><td>API 500</td><td class="num">4</td><td>Honest about partial failure. Could name the next step more plainly.</td></tr>
+    <tr><td>The workspace could not be processed.</td><td>API 500</td><td class="num">2</td><td>No reference, no log (S-2). The reader cannot report it usefully.</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section id="a11y">
+<h3>Accessibility (WCAG 2.2 AA)</h3>
+<p>Every ratio below was computed by <span class="mono">scripts/contrast.py</span> from the literal token hex, in the pairs file the audit wrote. Text contrast passes everywhere. Non-text boundaries fail where they identify a control.</p>
+<div class="tablewrap"><table>
+  <thead><tr><th>Pair (fg on ground)</th><th>Surface</th><th>Ratio</th><th>Result</th></tr></thead>
+  <tbody>
+    <tr><td>#f4f5f7 on #1b1e27 · body text</td><td>Landing</td><td class="num">15.26</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#c3c9d6 on #1b1e27 · notes and hints</td><td>Landing</td><td class="num">10.02</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#17210f on #b9f27c · primary button text</td><td>Landing</td><td class="num">12.73</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#b9f27c on #1b1e27 · result link</td><td>Landing</td><td class="num">12.73</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#ffd27a on #1b1e27 · notice text</td><td>Landing</td><td class="num">11.69</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#f4f5f7 on #101218 · input text</td><td>Landing</td><td class="num">17.16</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#ffffff on #1b1e27 · focus ring</td><td>Landing</td><td class="num">16.65</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#3a4152 on #101218 · <b>input border</b></td><td>Landing</td><td class="num">1.83</td><td><span class="chip missing">FAIL 1.4.11</span></td></tr>
+    <tr><td>#3a4152 on #1b1e27 · card border (decorative)</td><td>Landing</td><td class="num">1.63</td><td><span class="chip partial">exempt</span></td></tr>
+    <tr><td>#0b4f9c on #f7f4ee · focus, light</td><td>Site</td><td class="num">7.32</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#d9d3c7 on #ffffff · <b>disclosure border</b></td><td>Site light</td><td class="num">1.49</td><td><span class="chip missing">FAIL 1.4.11</span></td></tr>
+    <tr><td>#3a3f47 on #15171a · <b>disclosure border</b></td><td>Site dark</td><td class="num">1.69</td><td><span class="chip missing">FAIL 1.4.11</span></td></tr>
+    <tr><td>#9ec8ff on #15171a · focus, dark</td><td>Site dark</td><td class="num">10.40</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#4a5159 on #f7f4ee · muted, light</td><td>Site light</td><td class="num">7.32</td><td><span class="chip ok">PASS</span></td></tr>
+    <tr><td>#c4c8cf on #15171a · muted, dark</td><td>Site dark</td><td class="num">10.70</td><td><span class="chip ok">PASS</span></td></tr>
+  </tbody>
+</table></div>
+<div class="finding"><span class="chip p1">P1</span> <span class="id">A-1</span><strong>Live.</strong> Input and select borders are 1.83:1 against the field, below the 3:1 that 1.4.11 requires where a boundary is needed to identify a control. A sighted user may not see where to type.<span class="loc">src/ui.ts · :root --line:#3a4152; select, input rules</span><p class="fix">Plan 1.1. The owner chooses the boundary color; the check is the ratio.</p></div>
+<div class="finding"><span class="chip p2">P2</span> <span class="id">A-2</span><strong>Live.</strong> Disclosure controls on the site (the four <span class="mono">details</span> blocks) are bordered at 1.49:1 light and 1.69:1 dark.<span class="loc">site/index.html · :root --line; details rule</span><p class="fix">Plan 1.1, same token decision.</p></div>
+<div class="ok-row"><b>OK.</b> Landmarks (<span class="mono">main</span>, <span class="mono">nav</span> with a label), <span class="mono">lang="en"</span>, a single <span class="mono">h1</span> on each page, visible focus, the live region on the result, and <span class="mono">prefers-reduced-motion</span> on both surfaces. Each file input is visually hidden but still focusable, and its label shows the focus state. At 375 px the landing and site have no horizontal scroll and no target under 44 px.</div>
+</section>
+
+<section id="visual">
+<h3>Visual direction</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Decision</th><th>What</th><th>Why</th></tr></thead>
+  <tbody>
+    <tr><td><span class="chip ok">KEEP</span></td><td>The calm dark ground, the single green accent used for the one action, system type with no third face, flat surfaces, plain copy.</td><td>It suits a tool people use once and leave. The accent is used sparingly, which makes the result link the most noticeable element.</td></tr>
+    <tr><td><span class="chip p2">ELEVATE</span></td><td>The result state and the share reader. The result state is the moment people share a link, so it deserves the most care. The reader is what a collaborator sees, and it currently looks like a text dump.</td><td>Mockup briefs 1 and 2.</td></tr>
+    <tr><td><span class="chip p2">ELEVATE</span></td><td>Bring the landing and the site into one system: same accent family, same boundary color, and a light theme on the landing.</td><td>Two systems at the same origin look like two products. Light theme is an owner question (open question 4).</td></tr>
+    <tr><td><span class="chip p3">CUT</span></td><td>Nothing. The product has no placeholder or unpopulated surfaces, so nothing is removed.</td><td>The notes on unsupported formats, the Privacy line, and the admin field each do a job.</td></tr>
+  </tbody>
+</table></div>
+<div class="guard">Placeholders: none exist in the product today. Do not remove the unsupported-format notes, the Privacy line, the admin-token field, or the revoke control.</div>
+</section>
+
+<section id="personas">
+<h3>Persona walkthroughs</h3>
+<div class="persona">
+  <h3>1 · Primary operator (the owner, on desktop)</h3>
+  <div class="split">
+    <div class="delight"><div class="lbl">Delights</div><p>The page does one thing in three steps. Choosing a folder keeps relative paths. Copy and revoke sit beside the link. The failed-upload path keeps the link and says what to press next.</p></div>
+    <div class="stall"><div class="lbl">Stalls</div><p>The local run has no migration step, so the first request fails. The admin-token field sits on the page for everyone who visits it, and the expiry is shown only as a timestamp.</p></div>
+  </div>
+</div>
+<div class="persona">
+  <h3>2 · Collaborator (a person who opens the share link)</h3>
+  <div class="split">
+    <div class="delight"><div class="lbl">Delights</div><p>The content is readable and the warning about bearer access is in plain words. The file list and the "Start here" section match what the page says.</p></div>
+    <div class="stall"><div class="lbl">Stalls</div><p>The page shows <span class="mono">**1**</span> and backticks and an ISO timestamp. There is no structure to scan, and the expiry is hard to read.</p></div>
+  </div>
+</div>
+<div class="persona">
+  <h3>3 · Screen-reader user (an operator with assistive technology)</h3>
+  <div class="split">
+    <div class="delight"><div class="lbl">Delights</div><p>Each drop zone is a labelled control, the status region announces results, and focus is visible at 3 px with a 2 px offset. Reduced motion is honored.</p></div>
+    <div class="stall"><div class="lbl">Stalls</div><p>The only input that tells a sighted user where to type fails 1.4.11, and the same issue hides the disclosure controls on the site. A screen-reader user does not depend on that boundary, but a low-vision user does.</p></div>
+  </div>
+</div>
+<div class="persona">
+  <h3>4 · External agent (the non-human reader)</h3>
+  <div class="split">
+    <div class="delight"><div class="lbl">Delights</div><p>The handoff says to read <span class="mono">manifest.json</span> first, lists each projection, and states what the link is. The MCP endpoint connected with the official SDK, negotiated down to 2025-03-26, and listed resources and tools.</p></div>
+    <div class="stall"><div class="lbl">Stalls</div><p>The MCP endpoint has been tested with one client and is described as experimental. The raw handoff is a text block, which is correct for an agent and unhelpful for a person.</p></div>
+  </div>
+</div>
+</section>
+</section>
+
+<section id="plan">
+<h2>Execution plan for an agent</h2>
+<p>Audience: a smaller model. The full plan with literal values and done-when checks is in the repository at <span class="mono">docs/audit/2026-10-27-pre-distribution-audit.md</span>.</p>
+<div class="guard"><b>Two framings.</b> Unbuilt is not dead: give any placeholder one honest line of copy and keep it. Locked decisions are decisions: audit against them, and stop for the owner where a task touches one. Never deploy: <span class="mono">wrangler deploy</span>, secret changes, remote migrations, and Pages settings change only with the owner's explicit approval for that change.</div>
+<ol class="fix">
+  <li><b>Phase 0 · live-path fixes, before the next tester.</b> 0.1 landing headers · 0.2 error logging without content · 0.3 413 copy.</li>
+  <li><b>Phase 1 · before public.</b> 1.1 boundary contrast (STOP, owner picks the color) · 1.2 README local start and login · 1.3 config decision (STOP) · 1.4 entry and browser tests in CI · 1.5 setup smoke job · 1.6 zip expansion test.</li>
+  <li><b>Phase 2 · should close.</b> 2.1 versioned projections · 2.2 bounded purge · 2.3 README first line (STOP, owner approves) · 2.4 readable handoff (STOP, format) · 2.5 changelog and tag · 2.6 pin Actions to SHAs · 2.7 vulnerability reporting (STOP, account setting).</li>
+  <li><b>Phase 3 · polish.</b> 3.1 indent in <span class="mono">src/app.ts</span> · 3.2 landing copy, only if asked.</li>
+</ol>
+<p>Toolchain to keep green after every task: <span class="mono">npm test</span>, <span class="mono">npm run typecheck</span>, <span class="mono">npm run site:check</span>, <span class="mono">npm run deploy:dry</span>.</p>
+</section>
+
+<section id="briefs">
+<h2>Mockup briefs</h2>
+<p>Literal values come from the current code. Where a value is pending the owner's boundary decision, the value shown is only for rendering the mockup.</p>
+<div class="brief">
+  <h3>Shared spec · landing, dark</h3>
+  <p><span class="swatch" style="background:#111318"></span>ground #111318 · <span class="swatch" style="background:#1b1e27"></span>panel #1b1e27 · <span class="swatch" style="background:#101218"></span>field #101218 · <span class="swatch" style="background:#f4f5f7"></span>ink #f4f5f7 · <span class="swatch" style="background:#c3c9d6"></span>muted #c3c9d6 · <span class="swatch" style="background:#b9f27c"></span>accent #b9f27c · <span class="swatch" style="background:#17210f"></span>accent ink #17210f · <span class="swatch" style="background:#ffffff"></span>focus #ffffff · <span class="swatch" style="background:#ffd27a"></span>warn #ffd27a · <span class="swatch" style="background:#202719"></span>drop hover #202719 · boundary: pending (currently #3a4152, fails).</p>
+  <p>Type: system-ui stack at 16 px / 1.55. H1 clamp(2.2rem, 7vw, 4.5rem), line-height 1, letter-spacing −0.04em. H2 1rem, 700. Notes .88rem. Eyebrow .75rem, 700, uppercase, tracking .12em.</p>
+  <p>Radii: card 16 px, drop zone 12 px, inputs and buttons 10 px. Spacing base 4 px; card padding 22 px (18 px under 560 px). Elevation: none. Focus: 3 px solid #ffffff, offset 2 px. Signature: the drop zone, 1 px dashed #7c869e, 120 px minimum height, accent border and #202719 fill on hover.</p>
+</div>
+<div class="brief">
+  <h3>Screen 1 · Result state (the moment a link is shared)</h3>
+  <p>Frame: 760 px column, 16 px gutter, 8vh top padding. Components: eyebrow, H1, card (16 px radius, 22 px padding) holding the result. A 3 px left rule in #ffd27a when warnings exist. The share URL as a link in #b9f27c at 1.05rem, wrapping anywhere. Expiry line in #c3c9d6. Two secondary buttons, 44 px tall, transparent fill, 1 px border in the pending boundary color, ink #f4f5f7.</p>
+  <p>States: copied ("Copied"), copy failed ("Copy failed. Select the link and copy it."), revoking (disabled), revoked ("The link is off. The workspace content has been deleted.").</p>
+  <p>Signature moment: the link is the largest element after the H1, the only accent-colored text on the page, with a 1 px underline offset 3 px.</p>
+</div>
+<div class="brief">
+  <h3>Screen 2 · Share reader (what a collaborator opens)</h3>
+  <p>Frame: single column 680 px max, 20 px gutter. Rendered from handoff.md (assumes the Phase 2.4 approval).</p>
+  <p>Components: a top band "Temporary workspace · expires <time> UTC" in #c3c9d6 at .9rem. H1 "Agent handoff" at 1.6rem. Projections as a two-column table, 1 px border in the pending boundary color, 12 px radius. Files table with path, kind (Original or Readable), warnings. Unsupported rows carry a text label in #ffd27a, not color alone.</p>
+  <p>States: loading ("Loading the handoff…"); ended (heading "This link has ended", body "The content was deleted when the window ended or the link was revoked.").</p>
+  <p>Signature moment: a square glyph per file, filled accent for readable and outlined for original-only, always paired with its label.</p>
+</div>
+<div class="brief">
+  <h3>Screen 3 · First run (before anything is selected)</h3>
+  <p>Frame: same column as Screen 1. Eyebrow and H1 unchanged.</p>
+  <p>Components: card with three numbered steps (22 px numerals, accent on #263119), the two drop zones, the repository field with placeholder https://github.com/owner/repository, the window select (1, 6, 12 hours), the admin-token field labelled "(only if this deployment asks for one)".</p>
+  <p>States: nothing selected (create returns "Choose files, a folder, or a public GitHub repository first."); both selected ("Choose files or a folder, or a repository, not both in one link."); bad address ("Enter a public GitHub repository address, like https://github.com/owner/repository.").</p>
+  <p>Signature moment: the drop zone's hover fill (#202719) with a 1 px accent border, the only tinted surface on the page.</p>
+</div>
+<div class="guard">Placeholder guard: this product has no placeholder surfaces. Do not remove the unsupported-format notes, the Privacy line, the admin-token field, or the revoke control. A brief that cannot render without inventing a value is unfinished; the pending boundary color is the only value the owner must supply.</div>
+</section>
+
+<section id="gtm">
+<h2>GTM narrative and checklist</h2>
+<h3>Narrative</h3>
+<p><b>Positioning:</b> Agent File Optimizer turns a set of files into a temporary, readable link for an agent or a collaborator, and the link expires on its own.</p>
+<p><b>Tagline (46 characters):</b> Hand files to an agent, then let them expire.</p>
+<p><b>First comment:</b> I built this to stop explaining the same folder to an agent three times. You add files or a public GitHub repo, pick a one-, six-, or twelve-hour window, and get a link. The link serves the originals, a readable note, and a manifest that says what could not be read. It is open source and self-hosted, and it does not offer a hosted service.</p>
+<p><b>Press paragraph:</b> The project is a small Cloudflare Worker that makes a handoff for agents: originals, readable projections, a manifest of what was and was not converted, and a bearer link that stops working when its window closes. Its builder, R. Michael Thomas, states the limits plainly: PDF and Office extraction is basic, images have no text recognition, private repositories are not supported, and the read-only MCP endpoint was tested with one client.</p>
+<p><b>Lead with three:</b> the link that expires on its own; originals kept beside readable notes; limits stated in the handoff itself.</p>
+<p><b>Do not talk about yet:</b> "any file" and "zero retention" (both unverified as claims; PRIVACY.md says so); token savings (not measured); malware scanning (the basic check is a few heuristics, and it is labelled that way).</p>
+<p><b>Competitive one-liners:</b> Against a zip in a shared drive: the agent gets an orientation and a manifest, and the link ends by itself. Against tools that turn a repository into one prompt: this takes mixed folders and keeps the originals, but does not do private repositories. Against a hosted file-sharing service: you run it, and the storage sits in an account you hold.</p>
+<p><b>Cohort metrics, without phone-home:</b> count the rows in the workspaces table on your own deployment, by week, from the D1 console. Nothing is sent to the maintainer.</p>
+
+<h3>Launch checklist</h3>
+<div class="tablewrap"><table>
+  <thead><tr><th>Item</th><th>Status</th><th>Evidence</th></tr></thead>
+  <tbody>
+    <tr><td>License</td><td><span class="chip done">DONE</span></td><td>LICENSE is Apache-2.0; package.json agrees; owner approved.</td></tr>
+    <tr><td>CI on push</td><td><span class="chip done">DONE</span></td><td>Run on a8122e9 succeeded; the pages run succeeded.</td></tr>
+    <tr><td>Public site</td><td><span class="chip done">DONE</span></td><td>rmichaelthomas.github.io/agent-file-optimizer/ returns 200; the site check runs in CI.</td></tr>
+    <tr><td>Privacy document</td><td><span class="chip partial">PARTIAL</span></td><td>PRIVACY.md is complete; the landing links to it as plain text, not as a link.</td></tr>
+    <tr><td>Security policy</td><td><span class="chip partial">PARTIAL</span></td><td>SECURITY.md exists; private reporting not confirmed enabled (S-7).</td></tr>
+    <tr><td>Terms of service</td><td><span class="chip missing">MISSING</span></td><td>Needed only if a hosted instance is ever offered (open question 6).</td></tr>
+    <tr><td>Fresh-clone setup</td><td><span class="chip missing">MISSING</span></td><td>Fails at the first request (D-1). Not run after fix.</td></tr>
+    <tr><td>Changelog and tags</td><td><span class="chip missing">MISSING</span></td><td>No CHANGELOG, no tags, no releases (D-4).</td></tr>
+    <tr><td>Browser test in CI</td><td><span class="chip missing">MISSING</span></td><td>No browser test in the repository (C-5).</td></tr>
+    <tr><td>Alerts and observability</td><td><span class="chip partial">PARTIAL</span></td><td>Observability enabled in wrangler.jsonc; no alerts; 500 path unlogged (S-2).</td></tr>
+    <tr><td>Backup and restore drill</td><td><span class="chip missing">MISSING</span></td><td>No documented restore for D1 or R2. Not tested.</td></tr>
+    <tr><td>Uninstall steps</td><td><span class="chip missing">MISSING</span></td><td>README has no teardown for the bucket, the database, or the Worker.</td></tr>
+    <tr><td>Demo screenshot</td><td><span class="chip done">DONE</span></td><td>docs/images/result.png captured from the running interface on 27 Oct; the file's content matches the current ui.ts.</td></tr>
+    <tr><td>Feedback channel</td><td><span class="chip partial">PARTIAL</span></td><td>GitHub Issues is implied; no issue template exists (D-4).</td></tr>
+  </tbody>
+</table></div>
+</section>
+
+<section id="method">
+<h2>Method and evidence</h2>
+<p><b>Scope.</b> One audit of tree <span class="mono">a8122e9</span> on 27 Oct 2026. The four tracks (security and privacy, code and scale, UX and accessibility, distribution and GTM) were run one after another by the auditing agent, using the briefs in the audit skill, because the environment did not dispatch them in parallel. Each finding names a file and line. Live means reachable today: the Worker at <span class="mono">agent-file-optimizer.thomasbuild.workers.dev</span> and the Pages site.</p>
+<pre>$ npm test                 → Test Files 11 passed (11) · Tests 40 passed (40)
+$ npm run typecheck       → tsc --noEmit (no output, exit 0)
+$ npm run site:check      → site checks passed
+$ npm audit --omit=dev    → found 0 vulnerabilities
+$ wrangler deploy --dry-run → Total Upload: 99.27 KiB / gzip: 26.27 KiB; bindings DB, FILES
+$ bundle index.js         → 101656 bytes
+$ git log -p --all | grep (token and key patterns) → no matches
+$ curl GET live root      → HTTP/2 200, content-type text/html; no CSP, no framing header
+$ curl GET live /healthz  → {"ok":true,"service":"agent-file-optimizer"}
+$ fresh local dev, no migrations → POST /api/workspaces 500 · "no such table: workspaces"
+$ live create without admin token → 401 (earlier smoke test, same deployment)
+$ contrast.py --pairs (landing 12 pairs, site light 11, site dark 8) → exit 2; four rows fail 1.4.11 (landing input and card borders, site light and dark disclosure borders)
+$ persona: Chrome opens share link → 200 text/markdown; download: none</pre>
+
+<h3>Retractions</h3>
+<div class="retract"><b>Retracted:</b> my first live check of the root returned 404. I had used <span class="mono">curl -I</span>, which sends HEAD; the Worker routes GET. A GET returned 200. The landing finding stands on the GET response.</div>
+<div class="retract"><b>Retracted:</b> a grep for years returned "2024" and "2027" on the site and landing. Both are fragments of hex colours (<span class="mono">#1d2024</span>, <span class="mono">#202719</span>). No stale year is served.</div>
+<div class="retract"><b>Retracted:</b> my first contrast table read the <span class="mono">--file</span> mode, which pairs every token with every ground, and showed accent ink on the page ground at 1.12:1 as a failure. That pair is never rendered. The table above uses rendered pairs only.</div>
+<div class="retract"><b>Tool defect (not a product finding):</b> <span class="mono">contrast.py --pairs</span> skips every line that starts with <span class="mono">#</span>, so pairs written with hex colours are silently ignored and the run exits with an empty-table traceback. Workaround: drop the leading <span class="mono">#</span>. The script in the skill should treat <span class="mono">#</span> as part of the colour, not as a comment.</div>
+
+<h3>Not verified, needs a human</h3>
+<p>Cloudflare request-log retention of share paths (S-3). ZIP expansion on the live runtime (S-5). Whether private vulnerability reporting is enabled (S-7). The deployed cron's real cleanup behaviour, which needs a few days of observation. Performance numbers are estimates from the code, not measurements on Cloudflare. Other MCP clients were not tested.</p>
+</section>
+
+</main>
+</div>
+<footer>Audit of Agent File Optimizer, tree a8122e9. Plan in the repository at docs/audit/2026-10-27-pre-distribution-audit.md.</footer>
+</body>
+</html>

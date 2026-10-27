@@ -248,3 +248,25 @@ describe("scheduled purge", () => {
     expect(await expireDue(services, now)).toBe(0);
   });
 });
+
+describe("projection refresh cost", () => {
+  it("does not re-read the originals of files it has already parsed", async () => {
+    class CountingBlobStore extends MemoryBlobStore {
+      originalReads: string[] = [];
+      override async get(key: string) {
+        if (key.includes("/original/")) this.originalReads.push(key);
+        return super.get(key);
+      }
+    }
+    const blobs = new CountingBlobStore();
+    const { app } = setup(blobs);
+    const created = await create(app);
+    await upload(app, created, "one.md", "# One\n");
+    await upload(app, created, "two.md", "# Two\n");
+    blobs.originalReads = [];
+    await upload(app, created, "three.md", "# Three\n");
+    expect(blobs.originalReads.filter((key) => key.endsWith("one.md") || key.endsWith("two.md"))).toEqual([]);
+    const manifest = await json<{ files: Array<{ path: string }> }>(await app.fetch(new Request(`${created.shareUrl}/manifest.json`)));
+    expect(manifest.files.map((file) => file.path).sort()).toEqual(["one.md", "three.md", "two.md"]);
+  });
+});

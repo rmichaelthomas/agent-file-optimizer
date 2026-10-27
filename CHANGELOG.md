@@ -6,6 +6,9 @@
 - A blank `ADMIN_TOKEN` now refuses workspace creation instead of leaving it open.
 - A workspace with no files yet serves a handoff that says so, instead of a 404.
 - Opening a share link in a browser shows a readable page. Agents and `curl` still receive the Markdown unchanged.
+- Rate limiting: 120 requests a minute per caller address, separately for share reads and API calls. Over the limit returns 429.
+- Adding a file no longer re-reads the originals of files already parsed.
+- The privacy note on the link page is a link. The README has uninstall steps and a note on backups.
 - The link-creation page follows the system light or dark setting.
 - Per-request logs and traces are off in `wrangler.jsonc`, so a share token is not stored in Workers Logs. The app's own error lines stay on.
 - The landing page sends framing, content-type, and referrer protections.

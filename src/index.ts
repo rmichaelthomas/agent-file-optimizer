@@ -14,9 +14,27 @@ const LANDING_HEADERS = {
   "referrer-policy": "no-referrer",
 };
 
+// One counter per caller address and route class (share reads, or API calls). The address is used only as
+// the counter's key inside Cloudflare's rate limiter; this code does not store or log it.
+async function rateLimited(request: Request, env: AppEnv): Promise<Response | null> {
+  if (!env.RATE_LIMITER) return null;
+  const path = new URL(request.url).pathname;
+  if (path === "/healthz") return null;
+  const routeClass = path.startsWith("/s/") ? "share" : "api";
+  const caller = request.headers.get("cf-connecting-ip") ?? "unknown";
+  const outcome = await env.RATE_LIMITER.limit({ key: `${routeClass}:${caller}` });
+  if (outcome.success) return null;
+  return new Response(JSON.stringify({ error: "Too many requests. Wait a minute and try again." }), {
+    status: 429,
+    headers: { "content-type": "application/json; charset=utf-8", "retry-after": "60", "cache-control": "no-store" },
+  });
+}
+
 export default {
   async fetch(request: Request, env: AppEnv, ctx: ExecutionContext): Promise<Response> {
     if (new URL(request.url).pathname === "/" && request.method === "GET") return new Response(renderLandingPage(), { headers: LANDING_HEADERS });
+    const limited = await rateLimited(request, env);
+    if (limited) return limited;
     if (env.DB) await ensureSchema(env.DB);
     const services = servicesForEnv(env);
     return createApp(env, services).fetch(request);

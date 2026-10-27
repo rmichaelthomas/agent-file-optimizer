@@ -31,6 +31,14 @@
       "migrations_dir": "migrations"
     }
   ],
+  // At most 120 requests a minute per caller address and route class (share reads, API calls).
+  "ratelimits": [
+    {
+      "name": "RATE_LIMITER",
+      "namespace_id": "1001",
+      "simple": { "limit": 120, "period": 60 }
+    }
+  ],
   "triggers": {
     "crons": ["*/15 * * * *"]
   }

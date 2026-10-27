@@ -104,15 +104,18 @@ export async function refreshProjections(workspace: WorkspaceRecord, services: R
     const files = await services.store.listFiles(workspace.id);
     const sources: ProjectionSource[] = [];
     for (const record of files) {
+      // The parsed result is cached by content hash, so an unchanged file costs one small read here, not
+      // a read of the original. The original is fetched only when it has to be parsed again.
+      const runnerId = expectedRunnerId(record, options);
+      const cached = await readParsedCache(services, workspace.id, record.sha256);
+      if (cached && cached.runnerId === runnerId) {
+        sources.push({ record, parsed: cached.parsed });
+        continue;
+      }
       const original = await services.blobs.get(originalKey(workspace.id, record.path));
       if (!original) continue;
-      const input = parserInput(record, original.bytes);
-      const runnerId = expectedRunnerId(input, options);
-      const cached = await readParsedCache(services, workspace.id, record.sha256);
-      const parsed = cached?.runnerId === runnerId
-        ? cached.parsed
-        : await parseWithBestParser(input, options);
-      if (!cached || cached.runnerId !== runnerId) await cacheParsedResult(services, workspace.id, record.sha256, parsed, runnerId);
+      const parsed = await parseWithBestParser(parserInput(record, original.bytes), options);
+      await cacheParsedResult(services, workspace.id, record.sha256, parsed, runnerId);
       sources.push({ record, parsed });
     }
 
