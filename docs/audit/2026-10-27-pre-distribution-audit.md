@@ -1,6 +1,6 @@
 # Agent File Optimizer pre-distribution audit — execution plan
 
-Date: 2026-10-27 · Tree: `a8122e9` (main) · Full report with scorecard, personas, and method: https://claude.ai/artifact/VpKmbi7ZfV3JjN38EJtVf6 (private; shared only by the owner).
+Date: 2026-10-27 · Tree: `a8122e9` (main) · Full report with scorecard, personas, and method: [`2026-10-27-pre-distribution-audit-report.html`](2026-10-27-pre-distribution-audit-report.html) (an archived copy; open it in a browser).
 
 This file is the part a coding agent executes. Phases are a real sequence. Every task names files, the change, and the check that proves it is done. Do not modify files outside those named without stopping to ask. Keep these green after every task:
 
@@ -20,7 +20,9 @@ Verdict: ready for the owner and a few people who will read the stated limits an
 1. **Unbuilt is not dead.** Placeholder surfaces, unpopulated states, and anything specified but not yet built are intentional design or build debt. Never remove them. Where a task touches one, give the unpopulated state one honest line of copy and leave the surface in place. This product currently has no placeholder surfaces; the rule applies to anything added later.
 2. **Locked decisions are decisions.** The project's recorded non-negotiables (the README's stated limits, PRIVACY.md, the admin-token gate, the handoff format in `src/projections.ts`) are audited against, never argued with. Where a task touches one, it says STOP and asks the owner.
 
-## Status (updated on branch `pre-distribution-audit`)
+## Status: closed, 27 Oct 2026
+
+Every task and finding below is done or decided. The report was written against `a8122e9`, so its findings describe that tree.
 
 | Task | State |
 |---|---|
