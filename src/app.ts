@@ -161,7 +161,7 @@ async function uploadFiles(request: Request, services: RuntimeServices, id: stri
     return errorResponse(413, `Files in one request may total at most ${MAX_REQUEST_BYTES / (1024 * 1024)} MiB. Split the upload into smaller batches.`);
   }
   if (files.some((file) => file.size > MAX_UPLOAD_BYTES)) {
-    return errorResponse(413, `This MVP accepts files up to ${MAX_UPLOAD_BYTES / (1024 * 1024)} MiB each. Larger files will use the direct-upload/scanned path in a later adapter.`);
+    return errorResponse(413, `This MVP accepts files up to ${MAX_UPLOAD_BYTES / (1024 * 1024)} MiB each. Split larger files into separate uploads, or share them another way and add only the smaller ones here.`);
   }
 
   const uploaded: string[] = [];
@@ -300,7 +300,7 @@ export function createApp(env: AppEnv, services: RuntimeServices, options: AppOp
   };
   return {
     async fetch(request: Request): Promise<Response> {
-        const url = new URL(request.url);
+      const url = new URL(request.url);
       try {
         if (url.pathname === "/healthz" && request.method === "GET") return json({ ok: true, service: "agent-file-optimizer" });
         if (url.pathname === "/api/capabilities" && request.method === "GET") return json({
@@ -317,22 +317,24 @@ export function createApp(env: AppEnv, services: RuntimeServices, options: AppOp
             enhancedScanning: "not-configured",
           },
         });
-        if (url.pathname === "/api/workspaces" && request.method === "POST") return createWorkspace(request, env, services);
+        if (url.pathname === "/api/workspaces" && request.method === "POST") return await createWorkspace(request, env, services);
         const uploadMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/upload$/);
-        if (uploadMatch && request.method === "POST") return uploadFiles(request, services, uploadMatch[1], parserOptions);
+        if (uploadMatch && request.method === "POST") return await uploadFiles(request, services, uploadMatch[1], parserOptions);
         const repositoryMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/import-public-repo$/);
-        if (repositoryMatch && request.method === "POST") return importPublicRepository(request, services, repositoryMatch[1], parserOptions);
+        if (repositoryMatch && request.method === "POST") return await importPublicRepository(request, services, repositoryMatch[1], parserOptions);
         const statusMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/status$/);
-        if (statusMatch && request.method === "GET") return workspaceStatus(request, services, statusMatch[1]);
+        if (statusMatch && request.method === "GET") return await workspaceStatus(request, services, statusMatch[1]);
         const revokeMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/revoke$/);
-        if (revokeMatch && request.method === "POST") return revokeWorkspace(request, services, revokeMatch[1]);
+        if (revokeMatch && request.method === "POST") return await revokeWorkspace(request, services, revokeMatch[1]);
         if (/^\/s\/[^/]+\/mcp$/.test(url.pathname)) return await handleMcpRequest(request, services);
-        if (url.pathname.startsWith("/s/") && request.method === "GET") return share(request, services);
+        if (url.pathname.startsWith("/s/") && request.method === "GET") return await share(request, services);
         return errorResponse(404, "Not found.");
       } catch (error) {
         if (error instanceof URIError || (error instanceof Error && /path traversal|relative paths/i.test(error.message))) {
           return errorResponse(400, "That file path is not allowed.");
         }
+        // Route class only. Share paths carry the bearer token as their second segment, so /s/… is logged as /s.
+        console.error(`request failed: ${request.method} ${url.pathname.startsWith("/s/") ? "/s" : url.pathname.split("/").slice(0, 3).join("/")}/…: ${error instanceof Error ? error.name : "unknown error"}`);
         return errorResponse(500, "The workspace could not be processed.");
       }
     },
