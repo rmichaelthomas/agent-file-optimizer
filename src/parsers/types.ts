@@ -73,12 +73,12 @@ export function getParserCapabilities(): ParserCapability[] {
       notes: "Preserves rows as JSONL and a readable Markdown table.",
     },
     {
-      id: "native-pdf-basic",
-      label: "Basic PDF text",
+      id: "native-pdf",
+      label: "PDF text",
       billingClass: "free-native",
       extensions: [".pdf"],
       mimeTypes: ["application/pdf"],
-      notes: "Extracts literal text operators and simple Flate streams; complex layout PDFs need the optional document runner.",
+      notes: "Reads the text a PDF carries, using its pages, fonts, and character maps, in the order the PDF draws it. Scanned pages need OCR, encrypted files are not opened, and text in Asian-language fonts with no character map is not read.",
     },
     {
       id: "native-archive",
@@ -94,7 +94,7 @@ export function getParserCapabilities(): ParserCapability[] {
       billingClass: "free-native",
       extensions: [".docx"],
       mimeTypes: ["application/vnd.openxmlformats-officedocument.wordprocessingml.document"],
-      notes: "Extracts readable text from the document XML package.",
+      notes: "Reads headings, lists, tables, links, footnotes, comments, headers and footers, text boxes, and picture descriptions.",
     },
     {
       id: "native-office-pptx",
@@ -102,15 +102,15 @@ export function getParserCapabilities(): ParserCapability[] {
       billingClass: "free-native",
       extensions: [".pptx"],
       mimeTypes: ["application/vnd.openxmlformats-officedocument.presentationml.presentation"],
-      notes: "Extracts readable text from slide XML packages.",
+      notes: "Reads slides in presentation order: titles, bullets, tables, chart data, picture descriptions, and speaker notes.",
     },
     {
       id: "native-office-xlsx",
-      label: "XLSX cell text",
+      label: "XLSX sheets",
       billingClass: "free-native",
       extensions: [".xlsx"],
       mimeTypes: ["application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"],
-      notes: "Extracts readable cell and shared-string XML; formula evaluation is not performed.",
+      notes: "Reads each sheet as tab-separated rows: text, numbers, dates, booleans, and a formula's last calculated value. Formulas are not re-evaluated.",
     },
     {
       id: "native-html",

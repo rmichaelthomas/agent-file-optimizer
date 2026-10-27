@@ -28,7 +28,7 @@ describe("archive and document parser families", () => {
   it("extracts basic literal text from an uncompressed PDF", async () => {
     const pdf = "%PDF-1.4\n1 0 obj\n<<>>\nstream\n(Basic PDF text) Tj\nendstream\nendobj\n%%EOF";
     const parsed = await parseWithBestParser({ path: "brief.pdf", contentType: "application/pdf", bytes: new TextEncoder().encode(pdf) });
-    expect(parsed.parserId).toBe("native-pdf-basic");
+    expect(parsed.parserId).toBe("native-pdf");
     expect(parsed.text).toContain("Basic PDF text");
   });
 

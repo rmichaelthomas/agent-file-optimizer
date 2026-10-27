@@ -55,7 +55,7 @@ Current deployments, for reference:
 | `src/lifecycle.ts` | Tokens, projection refresh, purge, cleanup (`purgeWorkspace`, `settleWorkspace`, `expireDue`). |
 | `src/store.ts` | Workspace and file metadata: `MemoryWorkspaceStore` and `D1WorkspaceStore`. |
 | `src/storage.ts` | Blob storage: `MemoryBlobStore` and `R2BlobStore`. |
-| `src/parsers/` | Parser routing. `native.ts` is the free default. `types.ts` holds capabilities and the external runner seam. `sandbox-runner.ts` is the isolated runner adapter. |
+| `src/parsers/` | Parser routing. `native.ts` is the free default. `types.ts` holds capabilities and the external runner seam. `sandbox-runner.ts` is the isolated runner adapter. `pdf.ts` reads PDFs, `office.ts` reads DOCX, PPTX, and XLSX, `xml.ts` is the small XML reader they share, `fontprogram.ts` reads built-in font encodings, and `glyphs.ts` is generated glyph data (do not edit it by hand). |
 | `src/projections.ts` | Builds `handoff.md`, `manifest.json`, `tree.txt`, `content.md`, `content.jsonl`. |
 | `src/mcp.ts` | Read-only, stateless JSON-RPC endpoint at `/s/<token>/mcp`. |
 | `src/repository.ts` | Public GitHub import: allowlisted hosts, redirect limit, archive size cap. |
@@ -99,6 +99,9 @@ Errors use `{ error, message }`. Status `410` means expired or revoked. Limits: 
 - `tests/api.test.ts`, `tests/archive.test.ts`, `tests/parsers.test.ts`: API, ZIP, and parser behavior.
 - `tests/render.test.ts`: the HTML view (escaping, readable time, browser vs agent).
 - `tests/entry.test.ts`: the Worker entry (landing, health check, JSON 404).
+- `tests/pdf.test.ts`, `tests/office.test.ts`: the document readers, with real files from Chrome, macOS, ReportLab, pandoc, openpyxl, and XlsxWriter in `tests/fixtures/`, plus hand-built edge cases.
+- `tests/document-reading.test.ts`: `DOCUMENT_READING=off`.
+- `tests/extraction-dump.test.ts`: writes extracted text for `scripts/benchmark/compare_extraction.py`. It does nothing unless `EVAL_IN` and `EVAL_OUT` are set.
 - `tests/schema.test.ts`: schema bootstrap (idempotent, retries after failure), and the admin token gate, including a blank token.
 - `tests/lifecycle.test.ts`: retry after failed purge, expiry cleanup retry, revoke racing an upload, R2 batch deletion, request caps, content types through MCP.
 - `tests/mcp.test.ts`: JSON-RPC behavior, expiry, unsafe paths.
@@ -110,7 +113,7 @@ When you change behavior, add a test that fails before the change.
 ## Writing about the project
 
 - Describe what is working, basic, experimental, or not yet, using the README's capability table.
-- Name the limits where they matter: PDF reading is limited to simple PDFs; Office extraction is basic; images have no OCR; private repositories are not supported; the MCP endpoint was checked with three clients, listed in `docs/examples/mcp-session.md`.
+- Name the limits where they matter: PDFs are read in drawing order, so columns can interleave, and scans, encrypted files, and Asian-language text with no character map are not read; Office files are read as text and structure, not layout; images have no OCR; private repositories are not supported; the MCP endpoint was checked with three clients, listed in `docs/examples/mcp-session.md`.
 - Do not promise a general token saving. `docs/BENCHMARKS.md` has the measured cases: text and code stay within a few percent of the original, one HTML page was 76% smaller. Quote those, with their caveats, and nothing broader.
 - Do not add analytics, newsletter forms, testimonials, pricing, or user counts to the site.
 

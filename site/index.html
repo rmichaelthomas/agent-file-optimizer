@@ -86,7 +86,7 @@
       "name": "Which file types does it read?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, and XLSX give basic text and can lose formatting. PDF reading is limited: it handles simple PDFs, and many others, including most printed from browsers, come out as originals only. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
+        "text": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, ZIP archives, Word, PowerPoint, Excel, and PDF files are read. Office files keep their headings, lists, tables, slides, notes, and sheets. PDFs are read in the order they were written, so columns can interleave. Scanned PDFs and images are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
       }
     },
     {
@@ -267,10 +267,12 @@
       <tbody>
         <tr><td>Text, Markdown, code, logs</td><td>Readable notes plus the original</td><td><span class="tag tag-works">Works</span></td></tr>
         <tr><td>JSON, CSV, TSV</td><td>Structured records in <code>content.jsonl</code></td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>HTML</td><td>Basic text extraction</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>HTML</td><td>The visible text, without scripts or styling</td><td><span class="tag tag-works">Works</span></td></tr>
         <tr><td>ZIP archives</td><td>Members extracted within size and count limits</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>DOCX, PPTX, XLSX</td><td>Basic text; formatting, images, and some content may be missing</td><td><span class="tag tag-exp">Basic</span></td></tr>
-        <tr><td>PDF</td><td>Reads only simple PDFs; many, including most printed from browsers, come out as originals only</td><td><span class="tag tag-exp">Basic</span></td></tr>
+        <tr><td>DOCX</td><td>Headings, lists, tables, links, footnotes, comments, text boxes</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>PPTX</td><td>Slides in order: titles, bullets, tables, charts, speaker notes</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>XLSX</td><td>Each sheet as rows of cells, with dates and hidden sheets marked</td><td><span class="tag tag-works">Works</span></td></tr>
+        <tr><td>PDF</td><td>The text a PDF carries, in the order it was written; scanned pages are not read</td><td><span class="tag tag-works">Works</span></td></tr>
         <tr><td>Images and scans</td><td>Kept as originals; no text recognition yet</td><td><span class="tag tag-no">Original only</span></td></tr>
         <tr><td>Private repositories</td><td>Not supported yet</td><td><span class="tag tag-no">Not yet</span></td></tr>
         <tr><td>Files over 10 MiB each</td><td>Refused for now</td><td><span class="tag tag-no">Not yet</span></td></tr>
@@ -317,7 +319,7 @@
     <h3>How long does a link last?</h3>
     <p>You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it.</p>
     <h3>Which file types does it read?</h3>
-    <p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, and XLSX give basic text and can lose formatting. PDF reading is limited: it handles simple PDFs, and many others, including most printed from browsers, come out as originals only. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
+    <p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, ZIP archives, Word, PowerPoint, Excel, and PDF files are read. Office files keep their headings, lists, tables, slides, notes, and sheets. PDFs are read in the order they were written, so columns can interleave. Scanned PDFs and images are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
     <h3>Does it scan files for malware?</h3>
     <p>No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict.</p>
     <h3>How private is a share link?</h3>
@@ -331,6 +333,7 @@
   <section aria-labelledby="changes">
     <h2 id="changes">What has changed</h2>
     <ul>
+      <li>Word, PowerPoint, Excel, and PDF files are now read from their structure, and checked against independent extractors.</li>
       <li>Setup is a button or one command. The database tables create themselves on first use.</li>
       <li>Opening a share link in a browser shows a readable page. Agents still receive the Markdown.</li>
       <li>A workspace with no files yet explains that, instead of showing an error.</li>

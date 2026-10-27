@@ -3,8 +3,9 @@
 ## Unreleased
 
 - Code and unlisted text files are read as text: a broad list of code and config extensions, and any other file whose bytes are UTF-8 with no NUL byte. Before, only 12 extensions were, so `.mjs`, `.py`, `.go`, `.sh`, `.toml` and most others came out as original-only.
-- XLSX is read as named sheets, one row per line, cells separated by tabs, with shared strings resolved. Before, cells ran together.
-- The PDF warning says plainly that many PDFs, including most printed from browsers, cannot be read. README, site, and FAQ now match what was measured.
+- DOCX, PPTX, XLSX, and PDF now work, not "basic". DOCX keeps headings, lists, tables, links, footnotes, comments, headers and footers, and text boxes. PPTX reads slides in presentation order with titles, bullets, tables, charts, and speaker notes. XLSX reads named sheets with dates, booleans, and shared text. PDF is read from its structure (object streams, fonts and character maps, positioned text). Checked against independent extractors on 70 files: median word recall 100%, word-weighted 99.3%.
+- Added `DOCUMENT_READING=off` for Workers plans whose CPU limit is too small to read documents; PDFs, Office files, and ZIPs then stay original-only with a note.
+- The PDF parser id is now `native-pdf` (it was `native-pdf-basic`).
 - `docs/BENCHMARKS.md`: what an agent reads with and without the handoff, measured. No saving on text and code, 76% fewer tokens on one HTML page, Office files made readable.
 - MCP endpoint checked with the Python SDK (1.30.0 and 2.3.0) and Claude Code; the official TypeScript SDK check is now a test.
 - Uptime check: a GitHub Actions workflow runs `npm run health` against your deployment every 15 minutes once `HEALTHCHECK_URL` is set. A failed run is the alert.
