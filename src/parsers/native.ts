@@ -8,6 +8,18 @@ function textFrom(bytes: Uint8Array): string {
   return decoder.decode(bytes).replace(/^\uFEFF/, "").replaceAll("\r\n", "\n").replaceAll("\r", "\n");
 }
 
+/** True when the bytes read as UTF-8 text: valid UTF-8 and no NUL byte. Lets an unlisted extension (a Makefile, a .proto, a new language) through as text instead of original-only. */
+function looksLikeText(bytes: Uint8Array): boolean {
+  if (bytes.length === 0) return true;
+  if (bytes.subarray(0, 8192).includes(0)) return false;
+  try {
+    new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 function extension(path: string): string {
   const dot = path.lastIndexOf(".");
   return dot >= 0 ? path.slice(dot).toLowerCase() : "";
@@ -216,6 +228,68 @@ function readableXml(xml: string): string {
     .join("\n");
 }
 
+function xmlText(fragment: string): string {
+  return decodeXmlEntities([...fragment.matchAll(/<t\b[^>]*>([\s\S]*?)<\/t>/g)].map((match) => match[1]).join(""));
+}
+
+function columnIndex(reference: string): number {
+  let index = 0;
+  for (const char of reference.replace(/[^A-Za-z]/g, "").toUpperCase()) index = index * 26 + (char.charCodeAt(0) - 64);
+  return Math.max(index - 1, 0);
+}
+
+/**
+ * Reads a workbook the way a person would see it: one section per named sheet, one line per row, cells
+ * separated by tabs. Cell values are looked up in the shared-strings table, which is how Excel stores
+ * almost every text cell, so a sheet's own XML alone only holds numbers that point into that table.
+ */
+function xlsxSections(members: ArchiveMember[]): Array<{ path: string; name: string; text: string }> {
+  const byName = new Map(members.map((member) => [member.name, strFromU8(member.bytes)] as const));
+  const shared = [...(byName.get("xl/sharedStrings.xml") ?? "").matchAll(/<si\b[^>]*>([\s\S]*?)<\/si>/g)].map((match) => xmlText(match[1]));
+  const targets = new Map<string, string>();
+  for (const match of (byName.get("xl/_rels/workbook.xml.rels") ?? "").matchAll(/<Relationship\b[^>]*>/g)) {
+    const id = /\bId="([^"]*)"/.exec(match[0])?.[1];
+    const target = /\bTarget="([^"]*)"/.exec(match[0])?.[1];
+    if (id && target) targets.set(id, target.startsWith("/") ? target.slice(1) : `xl/${target}`);
+  }
+  const sheets: Array<{ name: string; path: string }> = [];
+  for (const match of (byName.get("xl/workbook.xml") ?? "").matchAll(/<sheet\b[^>]*>/g)) {
+    const name = /\bname="([^"]*)"/.exec(match[0])?.[1];
+    const rid = /\br:id="([^"]*)"/.exec(match[0])?.[1];
+    const path = rid ? targets.get(rid) : undefined;
+    if (name && path && byName.has(path)) sheets.push({ name: decodeXmlEntities(name), path });
+  }
+  if (sheets.length === 0) {
+    for (const member of members) if (/^xl\/worksheets\/sheet\d+\.xml$/i.test(member.name)) sheets.push({ name: member.name.replace(/^xl\/worksheets\/|\.xml$/gi, ""), path: member.name });
+  }
+
+  const sections: Array<{ path: string; name: string; text: string }> = [];
+  for (const sheet of sheets) {
+    const rows: string[] = [];
+    for (const row of (byName.get(sheet.path) ?? "").matchAll(/<row\b[^>]*>([\s\S]*?)<\/row>/g)) {
+      const cells: string[] = [];
+      for (const cell of row[1].matchAll(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g)) {
+        const type = /\bt="([^"]*)"/.exec(cell[1])?.[1];
+        const reference = /\br="([^"]*)"/.exec(cell[1])?.[1];
+        const body = cell[2] ?? "";
+        const raw = /<v>([\s\S]*?)<\/v>/.exec(body)?.[1];
+        let value = "";
+        if (type === "inlineStr") value = xmlText(body);
+        else if (raw !== undefined && type === "s") value = shared[Number(raw)] ?? "";
+        else if (raw !== undefined && type === "b") value = raw === "1" ? "TRUE" : "FALSE";
+        else if (raw !== undefined) value = decodeXmlEntities(raw);
+        const column = reference ? columnIndex(reference) : cells.length;
+        while (cells.length < column) cells.push("");
+        cells.push(value.replace(/[\t\r\n]+/g, " ").trim());
+      }
+      while (cells.length > 0 && cells[cells.length - 1] === "") cells.pop();
+      if (cells.length > 0) rows.push(cells.join("\t"));
+    }
+    if (rows.length > 0) sections.push({ path: sheet.path, name: sheet.name, text: rows.join("\n") });
+  }
+  return sections;
+}
+
 interface ArchiveMember {
   name: string;
   bytes: Uint8Array;
@@ -282,10 +356,18 @@ function archiveParser(): Parser {
         };
       }
 
-      const members = kind ? officeMemberSelection(kind, extracted.members) : extracted.members;
       const sections: string[] = [];
       const jsonl: string[] = [];
       const warnings: string[] = [];
+      let members = kind ? officeMemberSelection(kind, extracted.members) : extracted.members;
+      if (kind === "xlsx") {
+        const sheets = xlsxSections(extracted.members);
+        for (const sheet of sheets) {
+          sections.push(`### Sheet: ${sheet.name}\n\n${sheet.text}`);
+          jsonl.push(JSON.stringify({ path: sheet.path, sheet: sheet.name, text: sheet.text }));
+        }
+        if (sheets.length > 0) members = [];
+      }
       for (const member of members) {
         let memberPath: string;
         try {
@@ -382,7 +464,7 @@ function pdfParser(): Parser {
         confidence: text ? "medium" : "low",
         text: text || null,
         jsonl: text ? [JSON.stringify({ text })] : [],
-        warnings: text ? ["Basic PDF extraction preserves literal text but may miss complex layout, scanned pages, and embedded fonts."] : ["PDF basic parser found no readable literal text; the original was preserved. Complex or scanned PDFs need the optional document parser runner."],
+        warnings: text ? ["Basic PDF extraction preserves literal text but may miss complex layout, scanned pages, and embedded fonts."] : ["The basic PDF reader found no text it can decode; the original was preserved. Scanned PDFs, and many PDFs exported from browsers and word processors, store text in a form this reader does not handle. They need the optional document parser runner."],
       };
     },
   };
@@ -426,6 +508,8 @@ export async function parseWithBestParser(input: ParserInput, options: { allowAr
     }
   }
   const candidates = options.allowArchive === false ? parsers.filter((parser) => parser.capability.id !== "native-archive" && !parser.capability.id.startsWith("native-office-")) : parsers;
-  const parser = candidates.find((candidate) => candidate.supports(input)) ?? candidates[candidates.length - 1];
+  const fallback = candidates[candidates.length - 1];
+  const matched = candidates.slice(0, -1).find((candidate) => candidate.supports(input));
+  const parser = matched ?? (looksLikeText(input.bytes) ? candidates.find((candidate) => candidate.capability.id === "native-text") : undefined) ?? fallback;
   return parser.parse(input);
 }

@@ -45,4 +45,23 @@ describe("archive and document parser families", () => {
     const parsed = await parseWithBestParser({ path: "bomb.zip", contentType: "application/zip", bytes });
     expect(JSON.stringify(parsed).length).toBeLessThan(1024 * 1024);
   });
+
+  it("reads an XLSX as named sheets with tab-separated cells, resolving shared strings", async () => {
+    const bytes = zipSync({
+      "xl/workbook.xml": strToU8('<workbook xmlns:r="x"><sheets><sheet name="Orders" sheetId="1" r:id="rId1"/><sheet name="Q&amp;A" sheetId="2" r:id="rId2"/></sheets></workbook>'),
+      "xl/_rels/workbook.xml.rels": strToU8('<Relationships><Relationship Id="rId1" Type="t" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="t" Target="worksheets/sheet2.xml"/></Relationships>'),
+      "xl/sharedStrings.xml": strToU8('<sst><si><t>item</t></si><si><t>qty</t></si><si><t>widget</t></si><si><r><t>gad</t></r><r><t>get</t></r></si></sst>'),
+      "xl/worksheets/sheet1.xml": strToU8('<worksheet><sheetData><row r="1"><c r="A1" t="s"><v>0</v></c><c r="B1" t="s"><v>1</v></c><c r="D1" t="b"><v>1</v></c></row><row r="2"><c r="A2" t="s"><v>2</v></c><c r="B2"><v>4</v></c></row><row r="3"><c r="A3" t="s"><v>3</v></c><c r="B3"><v>9</v></c></row></sheetData></worksheet>'),
+      "xl/worksheets/sheet2.xml": strToU8('<worksheet><sheetData><row r="1"><c r="A1" t="inlineStr"><is><t>why</t></is></c></row></sheetData></worksheet>'),
+    });
+    const parsed = await parseWithBestParser({ path: "orders.xlsx", contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", bytes });
+    expect(parsed.parserId).toBe("native-office-xlsx");
+    expect(parsed.text).toContain("### Sheet: Orders");
+    expect(parsed.text).toContain("item\tqty\t\tTRUE");
+    expect(parsed.text).toContain("widget\t4");
+    expect(parsed.text).toContain("gadget\t9");
+    expect(parsed.text).toContain("### Sheet: Q&A");
+    expect(parsed.text).toContain("why");
+  });
 });
+

@@ -52,9 +52,9 @@ export function getParserCapabilities(): ParserCapability[] {
       id: "native-text",
       label: "Text, Markdown, and code",
       billingClass: "free-native",
-      extensions: [".txt", ".md", ".markdown", ".rst", ".log", ".ts", ".tsx", ".js", ".jsx", ".jsonc", ".css", ".html"],
+      extensions: [".txt", ".md", ".markdown", ".rst", ".log", ".ts", ".tsx", ".js", ".jsx", ".jsonc", ".css", ".html", ".mjs", ".cjs", ".mts", ".cts", ".py", ".rb", ".go", ".rs", ".java", ".kt", ".swift", ".c", ".h", ".cc", ".cpp", ".hpp", ".cs", ".php", ".sh", ".bash", ".zsh", ".sql", ".toml", ".ini", ".cfg", ".conf", ".yaml", ".yml", ".env", ".gitignore", ".scss", ".vue", ".svelte", ".lua", ".r", ".pl"],
       mimeTypes: ["text/plain", "text/markdown", "text/css", "application/javascript"],
-      notes: "Preserves readable text without sending it to an external parser.",
+      notes: "Preserves readable text without sending it to an external parser. A file with an unlisted extension is also read as text when its bytes are valid UTF-8 with no NUL bytes.",
     },
     {
       id: "native-json",

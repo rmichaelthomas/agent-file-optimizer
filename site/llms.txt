@@ -19,10 +19,10 @@
 
 ## Limits stated plainly
 
-- Works for text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP. DOCX, PPTX, XLSX, and PDF are basic text only. Images are kept as originals with no text recognition.
+- Works for text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP. DOCX, PPTX, and XLSX are basic text only. PDF reading is limited to simple PDFs. Images are kept as originals with no text recognition.
 - Each file is limited to 10 MiB. Private repositories are not supported.
 - Not a malware scanner. A share link is a bearer link: anyone who has it can read the workspace until it ends.
-- The read-only MCP endpoint is experimental and tested with one client.
+- The read-only MCP endpoint is experimental and tested with a few clients.
 
 ## Optional
 

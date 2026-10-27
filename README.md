@@ -85,11 +85,11 @@ The manifest is honest about what it could not do. A file it cannot read stays a
 
 ## Honest limits
 
-It does not replace a document-conversion pipeline. PDF and Office extraction is basic, images get no text recognition, and it is not a malware scanner. The [table below](#capabilities) says exactly what works, what is basic, and what is not built yet. A short list of what you should know before relying on it:
+It does not replace a document-conversion pipeline. PDF extraction is limited and Office extraction is basic, images get no text recognition, and it is not a malware scanner. The [table below](#capabilities) says exactly what works, what is basic, and what is not built yet. A short list of what you should know before relying on it:
 
 - A share link is a **bearer link**: anyone who has it can read the workspace until it ends. Treat it like a password.
 - Deletion is best-effort with retry. It is not secure erasure, and your hosting provider's backups are outside the app's control. See [PRIVACY.md](PRIVACY.md).
-- The read-only MCP endpoint is experimental and has been tested with one client.
+- The read-only MCP endpoint is experimental. It has been tested with three clients, listed in [docs/examples/mcp-session.md](docs/examples/mcp-session.md).
 
 ## Capabilities
 
@@ -100,16 +100,16 @@ Status key: **Works** means implemented and tested in this repository. **Basic**
 | Browser upload: drop files, choose files, choose a folder | Works | Folder paths are kept. Checked in a real browser at desktop and phone widths. |
 | Retention windows of 1, 6, or 12 hours | Works | Expiry is enforced on every read, and a scheduled cleanup runs every 15 minutes. |
 | Revoke a link | Works | The link returns `410` at once. Content deletion is retried if it fails partway. |
-| Text, Markdown, code, logs | Works | Preserved, with readable notes. |
+| Text, Markdown, code, logs | Works | Preserved, with readable notes. Common code extensions are listed; any other file whose bytes are UTF-8 text is read as text too. |
 | JSON, CSV, TSV | Works | Structured records in `content.jsonl`. |
 | HTML | Works | Basic text extraction. |
 | ZIP archives | Works | Members are extracted within size and count limits. |
-| DOCX, PPTX, XLSX | Basic | Text only. Formatting, images, comments, and some content may be missing. |
-| PDF | Basic | Text where the PDF contains text. Scanned pages and complex layouts may be missing. |
+| DOCX, PPTX, XLSX | Basic | Text only. Spreadsheets come out one sheet at a time, one row per line, cells separated by tabs. Formatting, images, comments, and some content may be missing, and DOCX tables read one cell per line. |
+| PDF | Basic | Reads only PDFs that store text as plain strings. In the benchmark, neither a PDF from a library nor one printed from Chrome gave any text, so expect many PDFs to be original-only. Scanned pages are never read. |
 | Images and scans | Original only | Kept as originals with a warning. No text recognition is built in. |
 | Public GitHub repository import | Works | Only `github.com` public repositories over HTTPS. Redirects are limited to GitHub hosts. 25 MiB archive cap. |
 | Private repositories | Not yet | Not supported. |
-| Read-only MCP endpoint on the share link | Experimental | Tested with the official MCP TypeScript SDK client (`@modelcontextprotocol/sdk` 1.32.2). Other clients are untested. |
+| Read-only MCP endpoint on the share link | Experimental | Tested with the official MCP TypeScript SDK (1.32.2, in the test suite), the official Python SDK (1.30.0 and 2.3.0), and Claude Code 2.1.312. Other clients are untested. |
 | Malware scanning | Not yet | The "basic check" is a few heuristics, not a malware verdict. |
 | External parser (OCR, Office, PDF engines) | Not yet | The adapter seam exists. It is off by default and not configured. |
 | Direct-to-storage uploads for large files | Not yet | Each file is capped at 10 MiB, and a request at 200 files and 50 MiB. |
@@ -178,7 +178,8 @@ The upload token is returned only once, when the workspace is created. Keep it i
 - **Cleanup.** The scheduled cleanup runs from the `*/15 * * * *` trigger in `wrangler.jsonc`. Keep the trigger enabled, or expired workspaces are only removed when someone next requests them.
 - **Custom address.** Set `APP_BASE_URL` in `wrangler.jsonc` if the Worker sits behind your own domain.
 - **Storage.** The first deploy creates the schema itself. The `migrations/` folder is the record of how the schema changed, and it is not something you run by hand.
-- **Rate limit.** `wrangler.jsonc` binds a rate limiter: 120 requests a minute per caller address, counted separately for share reads and API calls. Change `limit` there, or remove the `ratelimits` entry to turn it off.
+- **Rate limit.** `wrangler.jsonc` binds a rate limiter set to 120 requests a minute per caller address, counted separately for share reads and API calls. Cloudflare's limiter is approximate: counts are per location and eventually consistent, so it is a brake on floods, not an exact cap (a burst of 700 requests got 31 refusals in a live test). Change `limit` there, or remove the `ratelimits` entry to turn it off. For an exact limit, use a Cloudflare rate-limiting rule on your own domain.
+- **Uptime alert.** `.github/workflows/uptime.yml` checks your deployment every 15 minutes. Set the repository variable `HEALTHCHECK_URL` to your Worker's address and a failed run emails you. `npm run health` runs the same check by hand.
 - **Logs.** Per-request logs and traces are off in `wrangler.jsonc`, because a logged URL would contain a share token. Leave them off. Cloudflare's own account-level analytics are outside this repository.
 - **Backups.** There is no backup or restore, on purpose. Workspaces are temporary and are deleted when their window ends, so there is nothing to recover. Cloudflare may keep its own backups of the database and bucket under its policies.
 - **Before real use.** Read [PRIVACY.md](PRIVACY.md).
@@ -228,6 +229,7 @@ This is a small project and it is useful to hear how it behaves on real folders.
 - [PRIVACY.md](PRIVACY.md): exactly what is stored, when it is deleted, and what remains outside the app's control.
 - [SECURITY.md](SECURITY.md): how to report a vulnerability.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how to work on the project.
+- [docs/BENCHMARKS.md](docs/BENCHMARKS.md): what an agent actually reads with and without it, measured, including what it does not save.
 - [ROADMAP.md](ROADMAP.md): what is planned, and what is deliberately not.
 - [THIRD_PARTY.md](THIRD_PARTY.md): dependencies and licenses.
 

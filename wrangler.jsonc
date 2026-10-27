@@ -31,7 +31,7 @@
       "migrations_dir": "migrations"
     }
   ],
-  // At most 120 requests a minute per caller address and route class (share reads, API calls).
+  // About 120 requests a minute per caller address and route class (share reads, API calls). Cloudflare's limiter is approximate, so this is a brake on floods, not an exact cap.
   "ratelimits": [
     {
       "name": "RATE_LIMITER",
