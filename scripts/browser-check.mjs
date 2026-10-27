@@ -154,6 +154,24 @@ const contrast = await phone.evaluate(() => {
 });
 check("muted body text contrast >= 4.5:1", contrast >= 4.5, contrast.toFixed(2));
 
+// The same page in a light system setting: readable text and visible control boundaries.
+const lightContext = await browser.newContext({ viewport: { width: 375, height: 760 }, colorScheme: "light" });
+const light = await lightContext.newPage();
+await light.goto(base, { waitUntil: "load" });
+const lightRatios = await light.evaluate(() => {
+  const lum = (rgb) => { const [r, g, b] = rgb.map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
+  const parse = (s) => s.match(/\d+(\.\d+)?/g).slice(0, 3).map(Number);
+  const ratio = (x, y) => (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05);
+  const card = getComputedStyle(document.querySelector(".card")); const field = getComputedStyle(document.querySelector("select"));
+  const text = ratio(lum(parse(getComputedStyle(document.querySelector("p")).color)), lum(parse(card.backgroundColor)));
+  const edge = ratio(lum(parse(field.borderTopColor)), lum(parse(field.backgroundColor)));
+  const bodyBg = getComputedStyle(document.body).backgroundColor;
+  return { text, edge, bodyBg };
+});
+check("light setting: text >= 4.5:1 and control boundary >= 3:1", lightRatios.text >= 4.5 && lightRatios.edge >= 3 && lightRatios.bodyBg === "rgb(247, 244, 238)", `text ${lightRatios.text.toFixed(2)}, edge ${lightRatios.edge.toFixed(2)}, bg ${lightRatios.bodyBg}`);
+await shot(light, "light-375.png");
+await lightContext.close();
+
 // Control boundaries need 3:1 against the surface they sit on (WCAG 1.4.11).
 const boundary = await phone.evaluate(() => {
   const lum = (rgb) => { const [r, g, b] = rgb.map((v) => { const c = v / 255; return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4; }); return 0.2126 * r + 0.7152 * g + 0.0722 * b; };
