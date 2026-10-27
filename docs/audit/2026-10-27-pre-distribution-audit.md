@@ -20,6 +20,29 @@ Verdict: ready for the owner and a few people who will read the stated limits an
 1. **Unbuilt is not dead.** Placeholder surfaces, unpopulated states, and anything specified but not yet built are intentional design or build debt. Never remove them. Where a task touches one, give the unpopulated state one honest line of copy and leave the surface in place. This product currently has no placeholder surfaces; the rule applies to anything added later.
 2. **Locked decisions are decisions.** The project's recorded non-negotiables (the README's stated limits, PRIVACY.md, the admin-token gate, the handoff format in `src/projections.ts`) are audited against, never argued with. Where a task touches one, it says STOP and asks the owner.
 
+## Status (updated on branch `pre-distribution-audit`)
+
+| Task | State |
+|---|---|
+| 0.1 Landing headers | Done. Test in `tests/ui.test.ts`. Live after the next deploy. |
+| 0.2 Error logging | Done, with one correction: the plan's `slice(0, 3)` would have logged the share token for `/s/<token>`, so the log uses the route class `/s`. Also fixed a bug found by the test: route handlers were returned without `await`, so their errors skipped the 500 handler. |
+| 0.3 413 message | Done. |
+| 1.1 Boundary contrast | Done. New `--edge` token (landing `#7c869e`, site light `#857d6e`, site dark `#7a828c`), all 3:1 or better against their surfaces (computed with `contrast.py --pairs`). Decorative card borders are unchanged. Brand owner may still choose other values; the check is the ratio. |
+| 1.2 README quick start | Superseded: the schema now creates itself, `npm run deploy` handles login. `jq` note added. |
+| 1.3 Config ID | Done earlier: the real D1 ID was removed from `wrangler.jsonc`. It remains in history of `a8122e9`; it is an identifier, not a credential. |
+| 1.4 Entry and browser tests | Done. `tests/entry.test.ts`, `npm run browser-check` (18 checks), both in CI. |
+| 1.5 Setup smoke test in CI | Done earlier (`npm run smoke`). |
+| 1.6 Zip lying about size | Verified: fflate allocates by the declared size and truncates, so memory is bounded. Test added. |
+| 2.1 Projection refresh | Done. The five projection objects are overwritten in place (no delete first), and the refresh repeats if the file list changed while writing. |
+| 2.2 Purge bound | Done. 200 per pass, oldest first. |
+| 2.3 README first line | Waiting on the owner's wording. |
+| 2.4 HTML rendering of the handoff | Waiting on the owner (format contract). |
+| 2.5 Changelog, tag, template | Done. `v0.1.0` is a local tag on `a8122e9`, not pushed. |
+| 2.6 Pin Actions | Done. |
+| 2.7 Private vulnerability reporting | Setting is off (`gh api` reports `enabled: false`). `SECURITY.md` already names a fallback contact. Owner decides whether to enable it. |
+| 3.1 Indentation | Done. |
+| 3.2 Landing intent line | No change, as planned. |
+
 ---
 
 ## Phase 0 — Live-path fixes (before the next tester)

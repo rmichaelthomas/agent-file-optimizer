@@ -17,6 +17,7 @@ npm run typecheck
 npm run site:check
 npm run deploy:dry
 npm run smoke    # starts the Worker locally and runs the first-run flow end to end
+npm run browser-check  # drives the landing page in Chrome (needs Google Chrome)
 ```
 
 CI runs the same commands. A change is ready when they pass locally.

@@ -104,8 +104,8 @@ export interface WorkspaceStore {
   create(record: WorkspaceRecord): Promise<void>;
   get(id: string): Promise<WorkspaceRecord | null>;
   findByShareTokenHash(hash: string): Promise<WorkspaceRecord | null>;
-  /** Workspaces whose content may still exist: revoked or expired, or past their window, and not yet purged. */
-  listNeedingPurge(now: string): Promise<WorkspaceRecord[]>;
+  /** Workspaces whose content may still exist: revoked or expired, or past their window, and not yet purged. Oldest first, at most `limit` (default 200) so one scheduled run stays bounded. */
+  listNeedingPurge(now: string, limit?: number): Promise<WorkspaceRecord[]>;
   setStatus(id: string, status: WorkspaceStatus): Promise<void>;
   markPurged(id: string, purgedAt: string): Promise<void>;
   putFile(record: SourceFileRecord): Promise<void>;

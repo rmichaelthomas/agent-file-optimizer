@@ -18,6 +18,7 @@ It is software to be run by its operator. It is not a hosted service, and do not
 | `npm run dev` | `wrangler dev` on local bindings. The schema is created on first use, so there is no migration step. |
 | `npm run deploy` | Logs in if needed, creates the admin token on first run, and deploys with the token in the same step. Saves the token to `~/.agent-file-optimizer-admin-token`. Refuses to replace a token it did not create. |
 | `npm run smoke` | Starts the Worker locally and runs create, upload, and read through a share link. No Cloudflare account. CI runs it. |
+| `npm run browser-check` | Drives the landing page in Chrome against a local Worker: create, copy, open, revoke, error paths, layout and contrast. Needs Google Chrome. Set `BASE` to check a live copy. CI runs it. |
 | `npm run deploy:dry` | `wrangler deploy --dry-run`. Builds the bundle and lists bindings. Does not publish. |
 | `npm run site:check` | Static checks on `site/index.html`: metadata, no scripts or trackers, attribution, no unsupported claims. |
 | `npm run site:preview` | Serves `site/` on `127.0.0.1:8788`. |
@@ -43,6 +44,7 @@ Current deployments, for reference:
 | `src/schema.ts` | The current D1 schema, idempotent. Mirrors `migrations/`. |
 | `scripts/deploy.mjs` | `npm run deploy`: login check, admin token, deploy with the token. |
 | `scripts/smoke.mjs` | `npm run smoke`: first-run check on local bindings. |
+| `scripts/browser-check.mjs` | `npm run browser-check`: the landing page in a real browser. |
 | `src/app.ts` | HTTP routes, upload and repository import, revoke, share reads, request limits. |
 | `src/lifecycle.ts` | Tokens, projection refresh, purge, cleanup (`purgeWorkspace`, `settleWorkspace`, `expireDue`). |
 | `src/store.ts` | Workspace and file metadata: `MemoryWorkspaceStore` and `D1WorkspaceStore`. |
@@ -89,6 +91,7 @@ Errors use `{ error, message }`. Status `410` means expired or revoked. Limits: 
 ## Tests
 
 - `tests/api.test.ts`, `tests/archive.test.ts`, `tests/parsers.test.ts`: API, ZIP, and parser behavior.
+- `tests/entry.test.ts`: the Worker entry (landing, health check, JSON 404).
 - `tests/schema.test.ts`: schema bootstrap (idempotent, retries after failure), and the admin token gate, including a blank token.
 - `tests/lifecycle.test.ts`: retry after failed purge, expiry cleanup retry, revoke racing an upload, R2 batch deletion, request caps, content types through MCP.
 - `tests/mcp.test.ts`: JSON-RPC behavior, expiry, unsafe paths.

@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
-import { expireDue } from "../src/lifecycle";
+import { expireDue, PROJECTION_NAMES, projectionKey } from "../src/lifecycle";
 import { MemoryBlobStore, R2BlobStore } from "../src/storage";
-import { MemoryWorkspaceStore } from "../src/store";
+import { MemoryWorkspaceStore, PURGE_BATCH } from "../src/store";
 import type { BlobStore, RuntimeServices, StoredObject } from "../src/types";
 import { json, memoryEnv } from "./helpers";
 
@@ -185,5 +185,66 @@ describe("content types", () => {
     const body = await json<{ result: { content: Array<{ resource: { text?: string; blob?: string } }> } }>(response);
     expect(body.result.content[0].resource.text).toBe("# Plain note\n");
     expect(body.result.content[0].resource.blob).toBeUndefined();
+  });
+});
+
+/** Records any moment a projection is missing while another is being written. */
+class ProbingBlobStore extends MemoryBlobStore {
+  probing = false;
+  missing: string[] = [];
+
+  override async put(object: StoredObject): Promise<void> {
+    if (this.probing && object.key.includes("/projections/")) {
+      const workspace = object.key.split("/")[1];
+      for (const name of PROJECTION_NAMES) {
+        if (!(await this.get(projectionKey(workspace, name)))) this.missing.push(name);
+      }
+    }
+    await super.put(object);
+  }
+}
+
+describe("projection refresh", () => {
+  it("never leaves a projection missing while a later upload rewrites them", async () => {
+    const blobs = new ProbingBlobStore();
+    const { app } = setup(blobs);
+    const created = await create(app);
+    expect((await upload(app, created, "one.md", "# One\n")).status).toBe(201);
+    blobs.probing = true;
+    expect((await upload(app, created, "two.md", "# Two\n")).status).toBe(201);
+    expect(blobs.missing).toEqual([]);
+  });
+
+  it("ends with every file in the handoff when two uploads overlap", async () => {
+    const { app } = setup();
+    const created = await create(app);
+    const results = await Promise.all([upload(app, created, "a.md", "# A\n"), upload(app, created, "b.md", "# B\n")]);
+    expect(results.map((response) => response.status)).toEqual([201, 201]);
+    const manifest = await json<{ files: Array<{ path: string }> }>(await app.fetch(new Request(`${created.shareUrl}/manifest.json`)));
+    expect(manifest.files.map((file) => file.path).sort()).toEqual(["a.md", "b.md"]);
+  });
+});
+
+describe("scheduled purge", () => {
+  it("takes at most one batch per pass and finishes the rest on the next", async () => {
+    const services: RuntimeServices = { store: new MemoryWorkspaceStore(), blobs: new MemoryBlobStore() };
+    const total = PURGE_BATCH * 2 + 100;
+    for (let index = 0; index < total; index += 1) {
+      await services.store.create({
+        id: `w${index}`,
+        uploadTokenHash: "u",
+        shareTokenHash: `s${index}`,
+        createdAt: new Date(Date.UTC(2026, 0, 1)).toISOString(),
+        expiresAt: new Date(Date.UTC(2026, 0, 1, 1, 0, index % 60)).toISOString(),
+        windowHours: 1,
+        intent: "agent-understanding",
+        status: "ready",
+      });
+    }
+    const now = new Date(Date.UTC(2026, 5, 1));
+    expect(await expireDue(services, now)).toBe(PURGE_BATCH);
+    expect(await expireDue(services, now)).toBe(PURGE_BATCH);
+    expect(await expireDue(services, now)).toBe(100);
+    expect(await expireDue(services, now)).toBe(0);
   });
 });

@@ -87,7 +87,7 @@ npm run dev
 
 Open the local address Wrangler prints. Local mode uses a database and bucket on your machine, so nothing reaches Cloudflare and no token is needed. The data lives in `.wrangler/` and is not your deployment. `npm run smoke` runs the same first-run check that CI runs.
 
-The same flow works through the HTTP API:
+The same flow works through the HTTP API (this example needs `jq`):
 
 ```sh
 created=$(curl -sS -X POST http://localhost:8787/api/workspaces \
