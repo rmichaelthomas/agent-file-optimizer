@@ -24,7 +24,14 @@ Set `WRANGLER_SEND_METRICS=false` when running Wrangler in automation.
 
 ## Do not deploy without authorization
 
-Do not run `wrangler deploy` (without `--dry-run`), enable Cloudflare Pages, or create production D1 or R2 resources unless the repository owner has explicitly authorized that deployment in this session.
+Do not run `wrangler deploy` (without `--dry-run`), deploy the site, or create production D1 or R2 resources unless the repository owner has explicitly authorized that deployment in this session.
+
+Current deployments, for reference:
+
+- API Worker `agent-file-optimizer`, with D1 `agent-file-optimizer` and R2 `agent-file-optimizer-files`. Deploy with `npx wrangler deploy`. Its admin token is a Wrangler secret named `ADMIN_TOKEN`.
+- The public site is published by GitHub Pages from `site/`, through `.github/workflows/pages.yml` on pushes to `main`. No Cloudflare resource is involved.
+
+`wrangler pages` is not used. In the Wrangler version pinned here, `wrangler pages project create` delegates to Worker deployment and redeploys the API Worker.
 
 ## Architecture
 

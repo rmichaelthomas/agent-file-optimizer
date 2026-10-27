@@ -27,7 +27,7 @@ expect(!/malware[- ]scanned|zero[- ]retention guaranteed|private repos? supporte
 
 const hasH1 = (html.match(/<h1[\s>]/g) || []).length === 1;
 expect(hasH1, "the page needs exactly one h1");
-expect(existsSync(join(root, "_headers")), "site/_headers is missing");
+expect(/<meta http-equiv="Content-Security-Policy"/.test(html), "the page needs a Content-Security-Policy meta tag (GitHub Pages cannot set headers)");
 
 if (failures.length) {
   console.error(failures.map((f) => `FAIL ${f}`).join("\n"));

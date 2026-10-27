@@ -153,7 +153,9 @@ The upload token and the share link are separate. The upload token can add files
 
 ## Project status
 
-This is a small project. It runs its tests in CI, but it has not been deployed to a production Cloudflare account by its maintainer, and it has no operational history. Treat it as an experiment you run yourself, and read the limits above before relying on it.
+The maintainer runs one private deployment on Cloudflare (a Worker, an R2 bucket, and a D1 database), gated by an admin token. It is not offered as a public service. The project's public site is a static page in `site/`, published with GitHub Pages.
+
+This is a small project with a short operating history. Read the limits above before relying on it, and run your own copy if you need it.
 
 ## License
 

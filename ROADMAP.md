@@ -5,7 +5,7 @@ This is a short, honest list. It is not a promise of dates. Items move down when
 ## Next
 
 - Run the MCP endpoint against more clients and record the results in the README.
-- Deploy a test instance on a Cloudflare account and record what the dry run did not cover: bindings, the cron, and cleanup under real storage.
+- Watch the scheduled cleanup on the private deployment over several days and record what it deleted, and whether any retries were needed.
 - Measure the readable projections on real folders before claiming any token saving. Until then, the app does not claim one.
 
 ## Later, if they are needed
