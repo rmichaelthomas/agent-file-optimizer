@@ -18,6 +18,7 @@ It is software to be run by its operator. It is not a hosted service, and do not
 | `npm run dev` | `wrangler dev` on local bindings. The schema is created on first use, so there is no migration step. |
 | `npm run deploy` | Logs in if needed, creates the admin token on first run, and deploys with the token in the same step. Saves the token to `~/.agent-file-optimizer-admin-token`. Refuses to replace a token it did not create. |
 | `npm run smoke` | Starts the Worker locally and runs create, upload, and read through a share link. No Cloudflare account. CI runs it. |
+| `npm run health` | Checks a deployed copy (`HEALTHCHECK_URL=...`): health, landing headers, capabilities, and a database lookup. Needs no token. The uptime workflow runs it every 15 minutes. |
 | `npm run og` | Regenerates `site/og.png` (Open Graph) and `docs/images/social-preview.png` (the file to upload in the repository's Social preview setting). Needs Google Chrome. |
 | `npm run browser-check` | Drives the landing page in Chrome against a local Worker: create, copy, open, revoke, error paths, layout and contrast. Needs Google Chrome. Set `BASE` to check a live copy. CI runs it. |
 | `npm run deploy:dry` | `wrangler deploy --dry-run`. Builds the bundle and lists bindings. Does not publish. |
@@ -46,6 +47,8 @@ Current deployments, for reference:
 | `scripts/deploy.mjs` | `npm run deploy`: login check, admin token, deploy with the token. |
 | `src/render.ts` | Escaped Markdown subset rendered to HTML for a browser opening the base share link. |
 | `scripts/smoke.mjs` | `npm run smoke`: first-run check on local bindings. |
+| `scripts/health-check.mjs` | `npm run health`: the uptime check. |
+| `scripts/benchmark/` | Builds the benchmark corpus and measures tokens (`docs/BENCHMARKS.md`). Python, run by hand; not part of CI. |
 | `scripts/og-image.mjs` | `npm run og`: renders the social preview images from one template. |
 | `scripts/browser-check.mjs` | `npm run browser-check`: the landing page in a real browser. |
 | `src/app.ts` | HTTP routes, upload and repository import, revoke, share reads, request limits. |
@@ -107,8 +110,8 @@ When you change behavior, add a test that fails before the change.
 ## Writing about the project
 
 - Describe what is working, basic, experimental, or not yet, using the README's capability table.
-- Name the limits where they matter: PDF and Office extraction is basic; images have no OCR; private repositories are not supported; the MCP endpoint was checked with one client.
-- Do not promise token savings. None has been measured.
+- Name the limits where they matter: PDF reading is limited to simple PDFs; Office extraction is basic; images have no OCR; private repositories are not supported; the MCP endpoint was checked with three clients, listed in `docs/examples/mcp-session.md`.
+- Do not promise a general token saving. `docs/BENCHMARKS.md` has the measured cases: text and code stay within a few percent of the original, one HTML page was 76% smaller. Quote those, with their caveats, and nothing broader.
 - Do not add analytics, newsletter forms, testimonials, pricing, or user counts to the site.
 
 ## Files that stay local

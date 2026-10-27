@@ -86,7 +86,7 @@
       "name": "Which file types does it read?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, XLSX, and PDF give basic text and can lose formatting. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
+        "text": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, and XLSX give basic text and can lose formatting. PDF reading is limited: it handles simple PDFs, and many others, including most printed from browsers, come out as originals only. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
       }
     },
     {
@@ -110,7 +110,7 @@
       "name": "Does it work with MCP?",
       "acceptedAnswer": {
         "@type": "Answer",
-        "text": "The share link also exposes a read-only MCP endpoint. It is experimental and has been tested with one client, the official MCP TypeScript SDK."
+        "text": "The share link also exposes a read-only MCP endpoint. It is experimental. It has been tested with the official TypeScript and Python SDKs and with Claude Code."
       }
     },
     {
@@ -270,7 +270,7 @@
         <tr><td>HTML</td><td>Basic text extraction</td><td><span class="tag tag-works">Works</span></td></tr>
         <tr><td>ZIP archives</td><td>Members extracted within size and count limits</td><td><span class="tag tag-works">Works</span></td></tr>
         <tr><td>DOCX, PPTX, XLSX</td><td>Basic text; formatting, images, and some content may be missing</td><td><span class="tag tag-exp">Basic</span></td></tr>
-        <tr><td>PDF</td><td>Basic text where the file has text; scanned pages and complex layouts may be missing</td><td><span class="tag tag-exp">Basic</span></td></tr>
+        <tr><td>PDF</td><td>Reads only simple PDFs; many, including most printed from browsers, come out as originals only</td><td><span class="tag tag-exp">Basic</span></td></tr>
         <tr><td>Images and scans</td><td>Kept as originals; no text recognition yet</td><td><span class="tag tag-no">Original only</span></td></tr>
         <tr><td>Private repositories</td><td>Not supported yet</td><td><span class="tag tag-no">Not yet</span></td></tr>
         <tr><td>Files over 10 MiB each</td><td>Refused for now</td><td><span class="tag tag-no">Not yet</span></td></tr>
@@ -317,13 +317,13 @@
     <h3>How long does a link last?</h3>
     <p>You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it.</p>
     <h3>Which file types does it read?</h3>
-    <p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, XLSX, and PDF give basic text and can lose formatting. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
+    <p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, and XLSX give basic text and can lose formatting. PDF reading is limited: it handles simple PDFs, and many others, including most printed from browsers, come out as originals only. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
     <h3>Does it scan files for malware?</h3>
     <p>No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict.</p>
     <h3>How private is a share link?</h3>
     <p>A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure.</p>
     <h3>Does it work with MCP?</h3>
-    <p>The share link also exposes a read-only MCP endpoint. It is experimental and has been tested with one client, the official MCP TypeScript SDK.</p>
+    <p>The share link also exposes a read-only MCP endpoint. It is experimental. It has been tested with the official TypeScript and Python SDKs and with Claude Code.</p>
     <h3>What does it cost?</h3>
     <p>The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage.</p>
   </section>

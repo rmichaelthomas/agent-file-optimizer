@@ -130,3 +130,27 @@ describe("native parser registry", () => {
     expect(handoff).toMatch(/explicitly enabled/i);
   });
 });
+
+describe("code and unlisted text files", () => {
+  const parse = (path: string, bytes: Uint8Array, contentType = "application/octet-stream") => parseWithBestParser({ path, contentType, bytes });
+
+  it("reads common code extensions as text", async () => {
+    for (const path of ["tool.mjs", "main.py", "server.go", "lib.rs", "build.sh", "config.toml"]) {
+      const parsed = await parse(path, new TextEncoder().encode("print('hello')\n"));
+      expect(parsed.parserId, path).toBe("native-text");
+      expect(parsed.text, path).toContain("hello");
+    }
+  });
+
+  it("reads an unlisted extension as text when the bytes are UTF-8 with no NUL", async () => {
+    const parsed = await parse("schema.proto", new TextEncoder().encode('syntax = "proto3";\n'));
+    expect(parsed.parserId).toBe("native-text");
+    expect(parsed.text).toContain("proto3");
+  });
+
+  it("keeps binary and invalid UTF-8 as original-only", async () => {
+    expect((await parse("blob.bin", new Uint8Array([0x89, 0x50, 0x00, 0x01, 0x02]))).parserId).toBe("fallback-original-only");
+    expect((await parse("broken.dat", new Uint8Array([0xff, 0xfe, 0xfa, 0x41]))).parserId).toBe("fallback-original-only");
+  });
+});
+
