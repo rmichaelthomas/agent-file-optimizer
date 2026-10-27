@@ -3,17 +3,127 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Agent File Optimizer: a readable, temporary handoff for files</title>
-  <meta name="description" content="Agent File Optimizer turns files into a temporary, readable workspace and a link you can share with an agent or collaborator. Self-hosted, open source, and deleted when the window ends.">
+  <title>Agent File Optimizer: temporary readable links for AI agents</title>
+  <meta name="description" content="Hand files to an agent, then let them expire. A self-hosted Cloudflare Worker that turns files into one readable, temporary link for an AI agent.">
   <meta name="author" content="R. Michael Thomas">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+  <meta name="theme-color" content="#15171a">
+  <link rel="canonical" href="https://rmichaelthomas.github.io/agent-file-optimizer/">
   <meta property="og:type" content="website">
-  <meta property="og:title" content="Agent File Optimizer">
-  <meta property="og:description" content="A self-hosted temporary workspace that turns files into a clear handoff for AI agents and people.">
-  <meta name="twitter:card" content="summary">
-  <meta name="twitter:title" content="Agent File Optimizer">
-  <meta name="twitter:description" content="A self-hosted temporary workspace that turns files into a clear handoff for AI agents and people.">
-  <link rel="icon" href="data:,">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; base-uri 'none'; form-action 'none'">
+  <meta property="og:site_name" content="Agent File Optimizer">
+  <meta property="og:locale" content="en_US">
+  <meta property="og:url" content="https://rmichaelthomas.github.io/agent-file-optimizer/">
+  <meta property="og:title" content="Agent File Optimizer: hand files to an agent, then let them expire">
+  <meta property="og:description" content="A self-hosted Cloudflare Worker that turns files into one readable, temporary link for an AI agent or a collaborator. Open source.">
+  <meta property="og:image" content="https://rmichaelthomas.github.io/agent-file-optimizer/og.png">
+  <meta property="og:image:type" content="image/png">
+  <meta property="og:image:width" content="1200">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:alt" content="Agent File Optimizer: hand files to an agent, then let them expire. A share link with a six-hour expiry and the files it holds.">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Agent File Optimizer: hand files to an agent, then let them expire">
+  <meta name="twitter:description" content="A self-hosted Cloudflare Worker that turns files into one readable, temporary link for an AI agent or a collaborator.">
+  <meta name="twitter:image" content="https://rmichaelthomas.github.io/agent-file-optimizer/og.png">
+  <meta name="twitter:image:alt" content="Agent File Optimizer: hand files to an agent, then let them expire.">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; img-src 'self'; base-uri 'none'; form-action 'none'">
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": [
+    "SoftwareApplication",
+    "SoftwareSourceCode"
+  ],
+  "name": "Agent File Optimizer",
+  "description": "A self-hosted Cloudflare Worker that turns files into a temporary, readable link for an AI agent or a collaborator. The link ends on its own and the stored content is deleted.",
+  "url": "https://rmichaelthomas.github.io/agent-file-optimizer/",
+  "codeRepository": "https://github.com/rmichaelthomas/agent-file-optimizer",
+  "image": "https://rmichaelthomas.github.io/agent-file-optimizer/og.png",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cloudflare Workers",
+  "programmingLanguage": "TypeScript",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "isAccessibleForFree": true,
+  "keywords": "AI agents, MCP, Cloudflare Workers, file sharing, temporary links, document conversion, Markdown, self-hosted, privacy",
+  "author": {
+    "@type": "Person",
+    "name": "R. Michael Thomas",
+    "url": "https://rmichaelthomas.com"
+  }
+}
+  </script>
+  <script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "What is Agent File Optimizer?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "It is a small open-source Cloudflare Worker. You add files, a folder, or a public GitHub repository, and it gives you one temporary link. Whoever has the link, a person or an AI agent, can read the original files and a plain-language handoff note about them. When the window you chose ends, the link stops working and the stored content is deleted."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Is there a hosted version I can sign up for?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. The project is software you run on your own Cloudflare account, and the maintainer does not offer a hosted service. You can deploy a copy with one button, or run it on your own computer with no account at all."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How long does a link last?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Which file types does it read?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, XLSX, and PDF give basic text and can lose formatting. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it scan files for malware?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How private is a share link?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does it work with MCP?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The share link also exposes a read-only MCP endpoint. It is experimental and has been tested with one client, the official MCP TypeScript SDK."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What does it cost?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage."
+      }
+    }
+  ]
+}
+  </script>
   <style>
     :root {
       --bg: #f7f4ee;
@@ -196,6 +306,26 @@
       <p>Give the agent the share link. It should read <code>handoff.md</code> first. The link also exposes a read-only MCP endpoint for clients that support it. That endpoint is experimental.</p>
     </details>
     <div class="actions"><a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#readme">Read the README</a></div>
+  </section>
+
+  <section aria-labelledby="faq">
+    <h2 id="faq">Questions people ask</h2>
+    <h3>What is Agent File Optimizer?</h3>
+    <p>It is a small open-source Cloudflare Worker. You add files, a folder, or a public GitHub repository, and it gives you one temporary link. Whoever has the link, a person or an AI agent, can read the original files and a plain-language handoff note about them. When the window you chose ends, the link stops working and the stored content is deleted.</p>
+    <h3>Is there a hosted version I can sign up for?</h3>
+    <p>No. The project is software you run on your own Cloudflare account, and the maintainer does not offer a hosted service. You can deploy a copy with one button, or run it on your own computer with no account at all.</p>
+    <h3>How long does a link last?</h3>
+    <p>You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it.</p>
+    <h3>Which file types does it read?</h3>
+    <p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, and ZIP archives work. DOCX, PPTX, XLSX, and PDF give basic text and can lose formatting. Images and scans are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
+    <h3>Does it scan files for malware?</h3>
+    <p>No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict.</p>
+    <h3>How private is a share link?</h3>
+    <p>A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure.</p>
+    <h3>Does it work with MCP?</h3>
+    <p>The share link also exposes a read-only MCP endpoint. It is experimental and has been tested with one client, the official MCP TypeScript SDK.</p>
+    <h3>What does it cost?</h3>
+    <p>The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage.</p>
   </section>
 
   <section aria-labelledby="changes">
