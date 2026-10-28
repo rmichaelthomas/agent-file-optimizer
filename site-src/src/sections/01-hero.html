@@ -1,0 +1,44 @@
+<section class="hero" aria-labelledby="title">
+  <div class="wrap">
+    <p class="eyebrow">Open source · self-hosted · temporary</p>
+    <section class="title" data-ahi="ahi.typography-reading.variable-title" data-ahi-renderer="variable-title" data-ahi-element="section" data-ahi-version="1">
+      <h1 id="title">Hand files to an agent, then let them expire.</h1>
+    </section>
+    <p class="lede">Agent File Optimizer turns a set of files into a temporary, readable workspace. You get one link. Whoever you share it with, human or agent, can read the originals and clear notes about them. When the window you chose ends, the link stops working and the content is deleted.</p>
+    <p class="actions">
+      <a class="button primary" href="https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer">Deploy your own copy to Cloudflare</a>
+      <a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer">Read the code on GitHub</a>
+    </p>
+    <aside class="notice" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1" role="note">
+      <p><strong>There is no hosted service to sign up for.</strong> This project is software you run on your own Cloudflare account, or on your computer with no account at all. The maintainer's own deployment is private and needs an admin token to create links.</p>
+    </aside>
+
+    <section class="ribbon" aria-labelledby="life" data-ahi="ahi.motion-time.time-ribbon" data-ahi-renderer="time-ribbon" data-ahi-element="section" data-ahi-version="1">
+      <h2 id="life">The life of a link</h2>
+      <ol>
+        <li>
+          <h3>You add files</h3>
+          <p>Files, a folder, or a public GitHub repository. You choose how long the link will work.</p>
+        </li>
+        <li>
+          <h3>The link works</h3>
+          <p>For 1, 6, or 12 hours. Anyone who has it can read the workspace, and nothing else.</p>
+          <div class="windows" aria-hidden="true">
+            <span class="window w1"><i>1 h</i><span class="track"><b></b></span></span>
+            <span class="window w6"><i>6 h</i><span class="track"><b></b></span></span>
+            <span class="window w12"><i>12 h</i><span class="track"><b></b></span></span>
+          </div>
+          <p class="fine">The three windows, drawn to scale.</p>
+        </li>
+        <li>
+          <h3>The window ends</h3>
+          <p>The link answers <code>410 Gone</code> from that moment. You can end it sooner by revoking it.</p>
+        </li>
+        <li>
+          <h3>The content is deleted</h3>
+          <p>On the next request, or within 15 minutes by a scheduled cleanup, which retries if a deletion fails.</p>
+        </li>
+      </ol>
+    </section>
+  </div>
+</section>

@@ -12,8 +12,10 @@
     "deploy:dry": "wrangler deploy --dry-run",
     "deploy": "node scripts/deploy.mjs",
     "smoke": "node scripts/smoke.mjs",
+    "site:build": "node site-src/tools/build.mjs",
+    "site:test": "node --test 'site-src/tests/*.test.mjs'",
     "site:check": "node scripts/check-site.mjs",
-    "site:preview": "python3 -m http.server 8788 --directory site --bind 127.0.0.1",
+    "site:preview": "node site-src/tools/serve.mjs 8788",
     "browser-check": "node scripts/browser-check.mjs",
     "og": "node scripts/og-image.mjs",
     "health": "node scripts/health-check.mjs"

@@ -1,0 +1,25 @@
+{
+  "workspace": {
+    "windowHours": 6,
+    "intent": "agent-understanding"
+  },
+  "inputs": [
+    {
+      "path": "data/people.csv",
+      "contentType": "text/csv",
+      "text": "name,role\nAda,engineer\nGrace,admiral\n"
+    },
+    {
+      "path": "docs/note.md",
+      "contentType": "text/markdown",
+      "text": "# Hello\n\nA note for the agent.\n"
+    }
+  ],
+  "outputs": {
+    "content.jsonl": "{\"path\":\"data/people.csv\",\"data\":{\"name\":\"Ada\",\"role\":\"engineer\"}}\n{\"path\":\"data/people.csv\",\"data\":{\"name\":\"Grace\",\"role\":\"admiral\"}}\n{\"path\":\"docs/note.md\",\"text\":\"# Hello\\n\\nA note for the agent.\\n\"}\n",
+    "content.md": "# Agent-readable content\n\n## data/people.csv\n\nParser: `native-table`\n\n| name | role |\n| --- | --- |\n| Ada | engineer |\n| Grace | admiral |\n\n## docs/note.md\n\nParser: `native-text`\n\n# Hello\n\nA note for the agent.\n\n",
+    "handoff.md": "# Agent File Optimizer handoff\n\nThis is a temporary workspace prepared for agent use. Its content is deleted when the window ends or the link is revoked.\nIt was created for **agent-understanding** and expires at **2026-01-01T18:00:00.000Z** (UTC).\n\n## Start here\n\n- Read `manifest.json` for file-level provenance, hashes, parser status, and warnings.\n- Read `content.md` for the compact human-readable projection.\n- Read `content.jsonl` for row- or record-oriented ingestion.\n- Read `tree.txt` to understand the workspace layout.\n- Use `original/<path>` when the projection is incomplete or fidelity matters.\n\nFiles: **2**\nFormats without a configured native parser: **0**\nExternal processing was not invoked. Unsupported formats are called out rather than silently uploaded to another service.\n\n## Projections\n\n- `handoff.md` — this orientation note\n- `manifest.json` — machine-readable inventory and provenance\n- `tree.txt` — workspace tree\n- `content.md` — compact extracted content\n- `content.jsonl` — one record per structured row or readable file\n\nThe link is bearer access. Share it only with the intended agent or collaborator.\n",
+    "manifest.json": "{\n  \"version\": \"0.1\",\n  \"workspace\": {\n    \"id\": \"00000000-0000-4000-8000-000000000000\",\n    \"intent\": \"agent-understanding\",\n    \"windowHours\": 6,\n    \"createdAt\": \"2026-01-01T12:00:00.000Z\",\n    \"expiresAt\": \"2026-01-01T18:00:00.000Z\",\n    \"status\": \"ready\"\n  },\n  \"privacy\": {\n    \"retention\": \"deleted-at-expiry-or-revocation\",\n    \"externalProcessing\": false,\n    \"originalsPreserved\": true\n  },\n  \"files\": [\n    {\n      \"path\": \"data/people.csv\",\n      \"contentType\": \"text/csv\",\n      \"bytes\": 37,\n      \"size\": \"37 B\",\n      \"sha256\": \"50dda3ec0e5f87fe999d0862c4b39d79bf288a12cc121e31515879d83936aac9\",\n      \"uploadedAt\": \"2026-01-01T12:00:00.000Z\",\n      \"parser\": \"native-table\",\n      \"billingClass\": \"free-native\",\n      \"confidence\": \"high\",\n      \"warnings\": [],\n      \"safety\": {\n        \"status\": \"basic-check-passed\",\n        \"scanner\": \"basic-heuristics-only\",\n        \"signals\": [],\n        \"disclaimer\": \"This is not a malware verdict. It is a small local heuristic check; enhanced scanning is a separate, explicitly priced path.\"\n      },\n      \"origin\": {\n        \"kind\": \"upload\"\n      }\n    },\n    {\n      \"path\": \"docs/note.md\",\n      \"contentType\": \"text/markdown\",\n      \"bytes\": 31,\n      \"size\": \"31 B\",\n      \"sha256\": \"6b8e5c6029e733d932d7c6a9e35f23154f04760b3713570ccb235eab2933e6e9\",\n      \"uploadedAt\": \"2026-01-01T12:00:00.000Z\",\n      \"parser\": \"native-text\",\n      \"billingClass\": \"free-native\",\n      \"confidence\": \"high\",\n      \"warnings\": [],\n      \"safety\": {\n        \"status\": \"basic-check-passed\",\n        \"scanner\": \"basic-heuristics-only\",\n        \"signals\": [],\n        \"disclaimer\": \"This is not a malware verdict. It is a small local heuristic check; enhanced scanning is a separate, explicitly priced path.\"\n      },\n      \"origin\": {\n        \"kind\": \"upload\"\n      }\n    }\n  ],\n  \"projections\": [\n    \"handoff.md\",\n    \"manifest.json\",\n    \"tree.txt\",\n    \"content.md\",\n    \"content.jsonl\"\n  ]\n}\n",
+    "tree.txt": "workspaces/00000000-0000-4000-8000-000000000000/\n├── original/\n│   ├── data/people.csv\n│   └── docs/note.md\n└── projections/\n    ├── content.jsonl\n    ├── content.md\n    ├── handoff.md\n    ├── manifest.json\n    └── tree.txt\n"
+  }
+}

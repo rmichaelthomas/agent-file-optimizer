@@ -1,0 +1,30 @@
+<section id="run" class="chapter" aria-labelledby="run-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="run-h">How to use it</h2>
+    <details class="accordion" open data-ahi="ahi.reveals-discoveries.accordion" data-ahi-renderer="accordion" data-ahi-element="details" data-ahi-version="1">
+      <summary>Try it on your computer</summary>
+      <div class="accordion-content">
+        <p>No account is needed and nothing leaves your machine. The database and bucket live in <code>.wrangler/</code> on your computer.</p>
+        <pre tabindex="0"><code>git clone https://github.com/rmichaelthomas/agent-file-optimizer.git
+cd agent-file-optimizer
+npm install
+npm run dev</code></pre>
+        <p>Open the address Wrangler prints, drop in a file, and press <strong>Create temporary agent link</strong>.</p>
+      </div>
+    </details>
+    <details class="accordion" data-ahi="ahi.reveals-discoveries.accordion" data-ahi-renderer="accordion" data-ahi-element="details" data-ahi-version="1">
+      <summary>Run your own copy on Cloudflare</summary>
+      <div class="accordion-content">
+        <p>Use the button, which needs a Cloudflare account and no terminal, or run <code>npm run deploy</code> from a clone. Either way the storage is created for you, and you set an admin token so strangers cannot create workspaces on your account. Without one, anyone who can reach your Worker can.</p>
+        <p class="actions"><a class="button primary" href="https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer">Deploy your own copy to Cloudflare</a></p>
+      </div>
+    </details>
+    <details class="accordion" data-ahi="ahi.reveals-discoveries.accordion" data-ahi-renderer="accordion" data-ahi-element="details" data-ahi-version="1">
+      <summary>Connect an agent</summary>
+      <div class="accordion-content">
+        <p>Give the agent the share link and tell it to read <code>handoff.md</code> first. The link also exposes a read-only MCP endpoint for clients that support it. That endpoint is experimental.</p>
+      </div>
+    </details>
+    <p class="actions"><a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#readme">Read the README</a></p>
+  </div>
+</section>

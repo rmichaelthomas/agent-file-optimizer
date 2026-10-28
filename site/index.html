@@ -125,214 +125,773 @@
 }
   </script>
   <style>
-    :root {
-      --bg: #f7f4ee;
-      --panel: #ffffff;
-      --ink: #1f2328;
-      --muted: #4a5159;
-      --line: #d9d3c7;
-      --edge: #857d6e;
-      --accent: #33541e;
-      --accent-soft: #e8efdc;
-      --warn: #6b4a00;
-      --warn-soft: #fbf1d9;
-      --focus: #0b4f9c;
-    }
-    @media (prefers-color-scheme: dark) {
-      :root:not([data-theme="light"]) {
-        --bg: #15171a;
-        --panel: #1d2024;
-        --ink: #f0efe9;
-        --muted: #c4c8cf;
-        --line: #3a3f47;
-        --edge: #7a828c;
-        --accent: #b9de8a;
-        --accent-soft: #263119;
-        --warn: #ffd98a;
-        --warn-soft: #2e2713;
-        --focus: #9ec8ff;
-      }
-    }
-    :root[data-theme="dark"] {
-      --bg: #15171a;
-      --panel: #1d2024;
-      --ink: #f0efe9;
-      --muted: #c4c8cf;
-      --line: #3a3f47;
-      --edge: #7a828c;
-      --accent: #b9de8a;
-      --accent-soft: #263119;
-      --warn: #ffd98a;
-      --warn-soft: #2e2713;
-      --focus: #9ec8ff;
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-    a { color: var(--accent); text-underline-offset: 3px; }
-    a:focus-visible, summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
-    main { max-width: 760px; margin: 0 auto; padding: 0 20px; }
-    header.hero { padding: 64px 0 36px; }
-    .eyebrow { color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 12px; }
-    h1 { font-size: clamp(2rem, 6vw, 2.9rem); line-height: 1.12; letter-spacing: -.02em; margin: 0 0 18px; font-weight: 750; }
-    h2 { font-size: 1.35rem; line-height: 1.3; margin: 0 0 12px; }
-    h3 { font-size: 1.02rem; margin: 0 0 6px; }
-    p { margin: 0 0 14px; }
-    .lede { font-size: 1.15rem; color: var(--muted); max-width: 640px; }
-    section { padding: 28px 0; border-top: 1px solid var(--line); }
-    ol.steps, ul.plain { padding-left: 0; list-style: none; margin: 0; }
-    ol.steps { counter-reset: step; display: grid; gap: 12px; }
-    ol.steps li { counter-increment: step; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px 14px 56px; position: relative; }
-    ol.steps li::before { content: counter(step); position: absolute; left: 16px; top: 13px; width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-size: .9rem; }
-    ul.plain li { padding: 6px 0 6px 0; border-bottom: 1px dotted var(--line); }
-    ul.plain li:last-child { border-bottom: 0; }
-    .grid { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
-    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
-    .card p:last-child { margin-bottom: 0; }
-    table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-    th, td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
-    th { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
-    tr:last-child td { border-bottom: 0; }
-    .tag { display: inline-block; font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 2px 9px; white-space: nowrap; }
-    .tag-works { background: var(--accent-soft); color: var(--accent); }
-    .tag-exp { background: var(--warn-soft); color: var(--warn); }
-    .tag-no { background: var(--line); color: var(--ink); }
-    .notice { background: var(--warn-soft); color: var(--ink); border-radius: 12px; padding: 14px 16px; border: 1px solid var(--line); }
-    .actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
-    .button { display: inline-block; text-decoration: none; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; font-weight: 650; color: var(--accent); min-height: 44px; line-height: 24px; }
-    .button.primary { background: var(--accent); color: var(--bg); }
-    details { background: var(--panel); border: 1px solid var(--edge); border-radius: 12px; padding: 12px 16px; margin-bottom: 10px; }
-    summary { cursor: pointer; font-weight: 650; min-height: 32px; }
-    details p { margin: 10px 0 0; color: var(--muted); }
-    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; }
-    footer { padding: 28px 0 56px; color: var(--muted); font-size: .95rem; border-top: 1px solid var(--line); }
-    @media (max-width: 620px) {
-      .grid { grid-template-columns: 1fr; }
-      header.hero { padding-top: 40px; }
-      table, tbody, tr, td { display: block; width: 100%; }
-      thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
-      tr { border-bottom: 1px solid var(--line); padding: 10px 12px; }
-      tr:last-child { border-bottom: 0; }
-      td { border: 0; padding: 3px 0; }
-      td:first-child { font-weight: 650; }
-    }
-    @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+:root {
+  color-scheme: light dark;
+  --bg: #f7f4ee;
+  --panel: #ffffff;
+  --ink: #1f2328;
+  --muted: #4a5159;
+  --line: #d9d3c7;
+  --edge: #857d6e;
+  --accent: #33541e;
+  --accent-soft: #e8efdc;
+  --warn: #6b4a00;
+  --warn-soft: #fbf1d9;
+  --gone: #8f3a14;
+  --code-bg: #efeadf;
+  --focus: #0b4f9c;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15171a;
+    --panel: #1d2024;
+    --ink: #f0efe9;
+    --muted: #c4c8cf;
+    --line: #3a3f47;
+    --edge: #7a828c;
+    --accent: #b9de8a;
+    --accent-soft: #263119;
+    --warn: #ffd98a;
+    --warn-soft: #2e2713;
+    --gone: #ffb48a;
+    --code-bg: #101214;
+    --focus: #9ec8ff;
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overflow-wrap: break-word; }
+a { color: var(--accent); text-underline-offset: 3px; }
+a:focus-visible, summary:focus-visible, pre:focus-visible, .button:focus-visible { outline: 3px solid var(--focus); outline-offset: 3px; border-radius: 4px; }
+h1, h2, h3 { margin: 0 0 .5em; font-weight: 750; text-wrap: balance; }
+h2 { font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem); line-height: 1.2; letter-spacing: -.01em; }
+h3 { font-size: 1.08rem; line-height: 1.3; }
+p { margin: 0 0 14px; }
+code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+code { font-size: .9em; background: var(--accent-soft); padding: 1px 5px; border-radius: 5px; overflow-wrap: anywhere; }
+pre { margin: 0; padding: 14px 16px; overflow: auto; max-height: 24rem; background: var(--code-bg); border: 1px solid var(--line); border-radius: 10px; font-size: .84rem; line-height: 1.55; tab-size: 2; }
+pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
+.sr-only, .skip:not(:focus) { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%); white-space: nowrap; }
+.skip:focus { position: fixed; top: 8px; left: 8px; z-index: 10; padding: 10px 14px; background: var(--panel); color: var(--ink); border: 2px solid var(--focus); border-radius: 8px; }
+.fine { font-size: .92rem; color: var(--muted); }
+.wrap { width: min(1040px, 100%); margin: 0 auto; padding: 0 20px; }
+.bar { border-bottom: 1px solid var(--line); }
+.bar-inner { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 24px; padding-top: 12px; padding-bottom: 12px; }
+.brand { font-weight: 750; color: var(--ink); text-decoration: none; }
+.rail ol { display: flex; flex-wrap: wrap; gap: 2px 18px; margin: 0; padding: 0; list-style: none; font-size: .95rem; }
+.rail a { display: inline-block; padding: 6px 0; color: var(--muted); text-decoration: none; border-bottom: 2px solid transparent; }
+.rail a:hover { color: var(--ink); border-bottom-color: var(--accent); }
+.hero { padding: clamp(36px, 7vw, 72px) 0 12px; }
+.chapter { padding: clamp(32px, 5vw, 56px) 0; border-top: 1px solid var(--line); scroll-margin-top: 8px; }
+.intro, .sample-note { max-width: 66ch; }
+.prose { max-width: 760px; }
+.group { margin: 28px 0 12px; }
+.versus { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; align-items: start; }
+.versus > div > .group { margin-top: 12px; }
+.claims { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.state-pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; padding-top: 12px; }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; margin: 20px 0 24px; }
+.ribbon { margin-top: 36px; }
+.ribbon > ol { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0 18px; margin: 18px 0 0; padding: 0; list-style: none; }
+.foot { padding: 28px 0 56px; border-top: 1px solid var(--line); color: var(--muted); }
+@media (max-width: 860px) {
+  .versus, .claims, .steps { grid-template-columns: minmax(0, 1fr); }
+  .ribbon > ol { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 620px) {
+  .pair, .state-pair { grid-template-columns: minmax(0, 1fr); }
+}
+.eyebrow { color: var(--accent); font-size: .8rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; margin: 0 0 14px; }
+.title h1 { font-size: clamp(2.2rem, 1.2rem + 5vw, 4.1rem); line-height: 1.04; letter-spacing: -.03em; margin: 0 0 20px; max-width: 18ch; }
+.lede { font-size: 1.15rem; color: var(--muted); max-width: 64ch; }
+.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 20px 0; }
+.button { display: inline-block; text-decoration: none; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; font-weight: 650; color: var(--accent); min-height: 44px; line-height: 24px; }
+.button.primary { background: var(--accent); color: var(--bg); }
+.notice { background: var(--warn-soft); border: 1px solid var(--line); border-left: 6px solid var(--warn); border-radius: 12px; padding: 14px 18px; margin: 22px 0; max-width: 78ch; }
+.notice p:last-child { margin-bottom: 0; }
+
+/* The life of a link */
+.ribbon h2 { font-size: 1.15rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
+.ribbon li { position: relative; padding-top: 22px; border-top: 4px solid var(--seg, var(--accent)); }
+.ribbon li::before { content: ""; position: absolute; top: -10px; left: 0; width: 16px; height: 16px; border-radius: 50%; background: var(--seg, var(--accent)); border: 3px solid var(--bg); }
+.ribbon li:nth-child(n+3) { --seg: var(--gone); }
+.ribbon li h3 { margin-bottom: 4px; }
+.ribbon li p { font-size: .95rem; margin-bottom: 8px; }
+.windows { display: grid; gap: 6px; margin: 10px 0 4px; }
+.window { display: flex; align-items: center; gap: 8px; }
+.window i { flex: none; width: 2.6rem; font: normal .78rem/1 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); }
+.track { flex: 1; min-width: 0; }
+.window b { display: block; height: 14px; background: var(--accent); border-right: 5px solid var(--gone); border-radius: 3px; }
+.w1 b { width: 8.333%; min-width: 14px; }
+.w6 b { width: 50%; }
+.w12 b { width: 100%; }
+
+/* Steps */
+.step { position: relative; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px 16px; }
+.step-no { margin: 0 0 6px; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent-soft); color: var(--accent); font-weight: 750; border: 1px solid var(--accent); }
+.step .cue { margin: 12px 0 0; padding-top: 10px; border-top: 1px dotted var(--edge); font-size: .93rem; color: var(--muted); }
+.who { max-width: 70ch; }
+
+/* The files of a workspace */
+.scene h3 { margin-top: 24px; }
+.scene details { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 8px; }
+.scene details[open] { border-color: var(--accent); }
+summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 14px; padding: 12px 16px 12px 40px; cursor: pointer; font-weight: 650; list-style: none; position: relative; min-height: 44px; }
+summary::-webkit-details-marker { display: none; }
+summary::before { content: ""; position: absolute; left: 16px; top: 1.15em; border: solid transparent; border-width: 5px 0 5px 8px; border-left-color: var(--accent); }
+details[open] > summary::before { transform: rotate(90deg); transform-origin: 3px 5px; }
+summary span { font-weight: 400; color: var(--muted); font-size: .93rem; }
+.scene pre { margin: 0 12px 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.example { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-top: 24px; }
+.example figure, .example blockquote { margin: 0; min-width: 0; }
+.example figcaption { margin-top: 6px; font-size: .9rem; color: var(--muted); }
+.example pre { max-height: 14rem; }
+.guide-explanation { margin: 14px 0 0; padding-top: 12px; border-top: 1px dotted var(--edge); max-width: 74ch; }
+
+/* Formats and limits */
+.bridge table { width: 100%; border-collapse: collapse; font-size: .95rem; background: var(--panel); border: 1px solid var(--line); }
+caption { text-align: left; padding: 0 0 8px; color: var(--muted); font-size: .92rem; }
+.bridge th, .bridge td { text-align: left; padding: 10px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.bridge thead th { font-size: .8rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+.bridge tbody th { font-weight: 650; width: 28%; }
+.bridge tr:last-child > * { border-bottom: 0; }
+.tag { display: inline-block; font-size: .78rem; font-weight: 700; border-radius: 999px; padding: 2px 10px; white-space: nowrap; border: 1px solid transparent; }
+.tag-works { background: var(--accent-soft); color: var(--accent); border-color: var(--accent); }
+.tag-no { background: var(--code-bg); color: var(--ink); border-color: var(--edge); }
+.sheet { margin-top: 28px; }
+.sheet dl { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
+.sheet dl > div { display: grid; grid-template-columns: minmax(10rem, 17rem) minmax(0, 1fr); gap: 4px 20px; padding: 12px 18px; border-bottom: 1px dotted var(--edge); }
+.sheet dl > div:last-child { border-bottom: 0; }
+.sheet dt { font-weight: 650; }
+.sheet dd { margin: 0; color: var(--muted); }
+
+/* When the window ends */
+.quote { margin: 8px 0 28px; padding: 6px 0 6px 22px; border-left: 6px solid var(--accent); max-width: 44rem; }
+.quote blockquote { margin: 0; font-size: clamp(1.3rem, 1rem + 1.4vw, 1.8rem); line-height: 1.3; font-weight: 700; letter-spacing: -.01em; text-wrap: balance; }
+.quote blockquote p { margin: 0; }
+.quote figcaption { margin-top: 10px; color: var(--muted); font-size: .95rem; }
+.states { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 24px; }
+.states > .state-pair { padding: 4px 16px 16px; }
+.state { border: 1px solid var(--line); border-top-width: 6px; border-radius: 10px; padding: 12px 16px; min-width: 0; }
+.state-open { border-top-color: var(--accent); }
+.state-ended { border-top-color: var(--gone); }
+.state ul { margin: 0; padding-left: 1.1em; }
+.state li { margin-bottom: 6px; }
+.ladder ol { counter-reset: rung; list-style: none; margin: 12px 0 0; padding: 0; max-width: 70ch; }
+.ladder li { counter-increment: rung; position: relative; padding: 0 0 18px 52px; }
+.ladder li::before { content: counter(rung); position: absolute; left: 0; top: 0; width: 32px; height: 32px; display: grid; place-items: center; border-radius: 50%; background: var(--accent-soft); border: 2px solid var(--accent); color: var(--accent); font-weight: 750; font-size: .9rem; }
+.ladder li::after { content: ""; position: absolute; left: 15px; top: 36px; bottom: 4px; border-left: 2px solid var(--edge); }
+.ladder li:last-child::after { display: none; }
+.ladder li:last-child::before { background: var(--accent); color: var(--bg); }
+
+/* Receipts */
+.claim { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px 20px; min-width: 0; }
+.claim h3 { margin-bottom: 10px; }
+.receipt { margin: 0; }
+.receipt > div { display: grid; grid-template-columns: minmax(6.5rem, 8rem) minmax(0, 1fr); gap: 2px 14px; padding: 9px 0; border-top: 1px dotted var(--edge); }
+.receipt > div:first-child { border-top: 0; }
+.receipt dt { font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); padding-top: .25em; }
+.receipt dd { margin: 0; min-width: 0; }
+.receipt > div:nth-child(3) dd { background: var(--warn-soft); border-radius: 8px; padding: 8px 10px; margin: -4px 0; }
+.claim-command { margin-top: 10px; max-height: 12rem; font-size: .78rem; }
+.trail ol { margin: 8px 0 0; padding-left: 1.3em; max-width: 78ch; }
+.trail li { margin-bottom: 8px; }
+.trail li span { color: var(--muted); }
+.trail li span::before { content: " — "; }
+
+/* Run it, questions, footer */
+.accordion { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; margin-bottom: 10px; }
+.accordion[open] { border-color: var(--accent); }
+.accordion-content { padding: 0 18px 14px; }
+.accordion-content pre { margin-bottom: 14px; }
+.prose h3 { margin-top: 22px; }
+.prose ul { padding-left: 1.2em; }
+.prose li { margin-bottom: 8px; }
+.foot p:last-child { margin-bottom: 0; }
+
+/* Narrow screens: tables become stacked rows */
+@media (max-width: 620px) {
+  .bridge table, .bridge tbody, .bridge tr, .bridge th, .bridge td { display: block; width: 100%; }
+  .bridge caption { display: block; width: 100%; padding: 0 0 8px; }
+  .bridge thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .bridge tr { padding: 10px 12px; border-bottom: 1px solid var(--line); }
+  .bridge tr:last-child { border-bottom: 0; }
+  .bridge th, .bridge td { border: 0; padding: 3px 0; }
+  .bridge tbody th { width: 100%; }
+  .sheet dl > div { grid-template-columns: minmax(0, 1fr); }
+  .receipt > div { grid-template-columns: minmax(0, 1fr); }
+  .receipt > div:nth-child(3) dd { margin: 0; }
+}
+
+/* Forced colors drop backgrounds; keep the window bars and chosen states visible. */
+@media (forced-colors: active) {
+  .window b { forced-color-adjust: none; background: Highlight; border-right-color: CanvasText; }
+  .ribbon li::before { forced-color-adjust: none; background: Highlight; border-color: Canvas; }
+  .ribbon li:nth-child(n+3)::before { background: CanvasText; }
+  .step-no, .ladder li::before { forced-color-adjust: none; border-color: CanvasText; background: Canvas; color: CanvasText; }
+  .ladder li:last-child::before { background: Highlight; color: HighlightText; }
+  .tag-works { border: 2px solid Highlight; }
+  .tag-no { border: 1px dashed CanvasText; }
+  .button.primary { forced-color-adjust: none; background: ButtonFace; color: ButtonText; border: 2px solid ButtonText; }
+  summary::before { border-left-color: CanvasText; }
+  .scene details[open], .accordion[open] { border: 2px solid Highlight; }
+}
+@media print {
+  :root { --bg: #fff; --panel: #fff; --ink: #000; --muted: #333; --line: #999; --edge: #555; --accent: #1f3a0f; --accent-soft: #fff; --warn: #000; --warn-soft: #fff; --gone: #7a2d0c; --code-bg: #fff; }
+  body { font-size: 11pt; }
+  .skip, .rail { display: none; }
+  .bar { border-bottom: 0; }
+  .actions .button.primary { background: #fff; color: #000; border: 2px solid #000; }
+  a[href^="http"].button::after { content: " (" attr(href) ")"; font-weight: 400; font-size: .8em; overflow-wrap: anywhere; }
+  .chapter, .claim, .step, .state, .ladder li { break-inside: avoid; }
+  pre { max-height: none; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
+  /* Closed disclosures would print as one line; print every file and answer. */
+  details::details-content { content-visibility: visible; display: block; }
+  .window b, .ribbon li, .ribbon li::before, .step-no, .ladder li::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .ribbon > ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+}
   </style>
 </head>
-<body>
-<main>
-  <header class="hero">
+<body id="top">
+<a class="skip" href="#main">Skip to the content</a>
+<header class="bar">
+  <div class="wrap bar-inner">
+    <a class="brand" href="#top">Agent File Optimizer</a>
+    <nav class="rail" aria-label="On this page" data-ahi="ahi.navigation-journeys.chapter-rail" data-ahi-renderer="chapter-rail" data-ahi-element="nav" data-ahi-version="1">
+      <ol>
+        <li><a href="#how">How it works</a></li>
+        <li><a href="#receives">What arrives</a></li>
+        <li><a href="#stops">Where it stops</a></li>
+        <li><a href="#ends">When it ends</a></li>
+        <li><a href="#numbers">The numbers</a></li>
+        <li><a href="#run">Run it</a></li>
+        <li><a href="#faq">Questions</a></li>
+      </ol>
+    </nav>
+  </div>
+</header>
+<main id="main">
+<section class="hero" aria-labelledby="title">
+  <div class="wrap">
     <p class="eyebrow">Open source · self-hosted · temporary</p>
-    <h1>Hand files to an agent without the setup.</h1>
+    <section class="title" data-ahi="ahi.typography-reading.variable-title" data-ahi-renderer="variable-title" data-ahi-element="section" data-ahi-version="1">
+      <h1 id="title">Hand files to an agent, then let them expire.</h1>
+    </section>
     <p class="lede">Agent File Optimizer turns a set of files into a temporary, readable workspace. You get one link. Whoever you share it with, human or agent, can read the originals and clear notes about them. When the window you chose ends, the link stops working and the content is deleted.</p>
-    <div class="actions">
+    <p class="actions">
       <a class="button primary" href="https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer">Deploy your own copy to Cloudflare</a>
       <a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer">Read the code on GitHub</a>
+    </p>
+    <aside class="notice" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1" role="note">
+      <p><strong>There is no hosted service to sign up for.</strong> This project is software you run on your own Cloudflare account, or on your computer with no account at all. The maintainer's own deployment is private and needs an admin token to create links.</p>
+    </aside>
+
+    <section class="ribbon" aria-labelledby="life" data-ahi="ahi.motion-time.time-ribbon" data-ahi-renderer="time-ribbon" data-ahi-element="section" data-ahi-version="1">
+      <h2 id="life">The life of a link</h2>
+      <ol>
+        <li>
+          <h3>You add files</h3>
+          <p>Files, a folder, or a public GitHub repository. You choose how long the link will work.</p>
+        </li>
+        <li>
+          <h3>The link works</h3>
+          <p>For 1, 6, or 12 hours. Anyone who has it can read the workspace, and nothing else.</p>
+          <div class="windows" aria-hidden="true">
+            <span class="window w1"><i>1 h</i><span class="track"><b></b></span></span>
+            <span class="window w6"><i>6 h</i><span class="track"><b></b></span></span>
+            <span class="window w12"><i>12 h</i><span class="track"><b></b></span></span>
+          </div>
+          <p class="fine">The three windows, drawn to scale.</p>
+        </li>
+        <li>
+          <h3>The window ends</h3>
+          <p>The link answers <code>410 Gone</code> from that moment. You can end it sooner by revoking it.</p>
+        </li>
+        <li>
+          <h3>The content is deleted</h3>
+          <p>On the next request, or within 15 minutes by a scheduled cleanup, which retries if a deletion fails.</p>
+        </li>
+      </ol>
+    </section>
+  </div>
+</section>
+<section id="how" class="chapter" aria-labelledby="how-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="how-h">How it works</h2>
+    <p class="intro">Sharing a folder of mixed files with an agent usually means explaining each file, converting some of them, and remembering which copy is current. Agent File Optimizer does that preparation once. It keeps your originals, adds readable versions where it can, and gives you a link to share.</p>
+    <div class="steps">
+      <article class="step" data-ahi="ahi.teaching-guidance.step-card" data-ahi-renderer="step-card" data-ahi-element="article" data-ahi-version="1">
+        <p class="step-no" aria-hidden="true">1</p>
+        <h3>Add what to share</h3>
+        <p>Drop in files, choose a folder, or paste the address of a public GitHub repository.</p>
+        <p class="cue">Done when you press <strong>Create temporary agent link</strong>.</p>
+      </article>
+      <article class="step" data-ahi="ahi.teaching-guidance.step-card" data-ahi-renderer="step-card" data-ahi-element="article" data-ahi-version="1">
+        <p class="step-no" aria-hidden="true">2</p>
+        <h3>Choose a window</h3>
+        <p>Keep the link working for 1, 6, or 12 hours. You can also revoke it sooner.</p>
+        <p class="cue">Done when the link shows the time it will end.</p>
+      </article>
+      <article class="step" data-ahi="ahi.teaching-guidance.step-card" data-ahi-renderer="step-card" data-ahi-element="article" data-ahi-version="1">
+        <p class="step-no" aria-hidden="true">3</p>
+        <h3>Share the link</h3>
+        <p>Copy the link and send it to the agent or person who needs the files.</p>
+        <p class="cue">Tell the agent to read <code>handoff.md</code> first.</p>
+      </article>
     </div>
-    <p class="notice" style="margin-top:22px">There is no hosted service to sign up for. This project is software you run on your own Cloudflare account. The maintainer's own deployment is private and needs an admin token to create links.</p>
-  </header>
+    <p class="who"><strong>Who it is for:</strong> people who want a simple handoff to an agent or a collaborator, without remembering conversion commands, copying files around, or trusting a service with more than the window needs.</p>
+  </div>
+</section>
+<section id="receives" class="chapter" aria-labelledby="receives-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="receives-h">What the agent receives</h2>
+    <p class="intro">Open the link and the first thing you get is <code>handoff.md</code>, a plain-language orientation. A person who opens the same link in a browser sees it as a readable page. An agent, or <code>curl</code>, receives the Markdown.</p>
+    <p class="sample-note">What follows is a real sample: a two-row CSV and a one-line note, run through the project's own code. Every file below was printed by that code, not typed. Open any of them.</p>
 
-  <section aria-labelledby="what">
-    <h2 id="what">What it does</h2>
-    <p>Sharing a folder of mixed files with an agent usually means explaining each file, converting some of them, and remembering which copy is current. Agent File Optimizer does that preparation once. It keeps your originals, adds readable versions where it can, and gives you a link to share.</p>
-  </section>
+    <section class="scene" aria-labelledby="scene-h" data-ahi="ahi.reveals-discoveries.tabbed-scene" data-ahi-renderer="tabbed-scene" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="scene-h">Inside one workspace</h3>
+      <details name="workspace-file" open>
+        <summary><code>handoff.md</code> <span>What the workspace is for, when it ends, what to read first</span></summary>
+        <pre tabindex="0"><code># Agent File Optimizer handoff
 
-  <section aria-labelledby="how">
-    <h2 id="how">How it works</h2>
-    <ol class="steps">
-      <li><h3>Add what to share</h3><p>Drop in files, choose a folder, or paste the address of a public GitHub repository.</p></li>
-      <li><h3>Choose a window</h3><p>Keep the link working for 1, 6, or 12 hours. You can also revoke it sooner.</p></li>
-      <li><h3>Share the link</h3><p>Copy the link and send it to the agent or person who needs the files. Anyone with the link can read the workspace until it ends.</p></li>
-    </ol>
-  </section>
+This is a temporary workspace prepared for agent use. Its content is deleted when the window ends or the link is revoked.
+It was created for **agent-understanding** and expires at **2026-01-01T18:00:00.000Z** (UTC).
 
-  <section aria-labelledby="arrives">
-    <h2 id="arrives">What the agent receives</h2>
-    <div class="grid">
-      <div class="card"><h3>Originals</h3><p>Every file as you added it, unchanged, under its original relative path.</p></div>
-      <div class="card"><h3>A handoff note</h3><p><code>handoff.md</code> says what the workspace is for, when it expires, and what to read first.</p></div>
-      <div class="card"><h3>A manifest</h3><p><code>manifest.json</code> lists each file with its hash, the parser used, a confidence level, and any warnings.</p></div>
-      <div class="card"><h3>Readable notes</h3><p><code>content.md</code> and <code>content.jsonl</code> hold text from supported formats, and <code>tree.txt</code> shows the layout.</p></div>
+## Start here
+
+- Read `manifest.json` for file-level provenance, hashes, parser status, and warnings.
+- Read `content.md` for the compact human-readable projection.
+- Read `content.jsonl` for row- or record-oriented ingestion.
+- Read `tree.txt` to understand the workspace layout.
+- Use `original/&lt;path&gt;` when the projection is incomplete or fidelity matters.
+
+Files: **2**
+Formats without a configured native parser: **0**
+External processing was not invoked. Unsupported formats are called out rather than silently uploaded to another service.
+
+## Projections
+
+- `handoff.md` — this orientation note
+- `manifest.json` — machine-readable inventory and provenance
+- `tree.txt` — workspace tree
+- `content.md` — compact extracted content
+- `content.jsonl` — one record per structured row or readable file
+
+The link is bearer access. Share it only with the intended agent or collaborator.
+</code></pre>
+      </details>
+      <details name="workspace-file">
+        <summary><code>manifest.json</code> <span>Each file with its hash, parser, confidence, and warnings</span></summary>
+        <pre tabindex="0"><code>{
+  &quot;version&quot;: &quot;0.1&quot;,
+  &quot;workspace&quot;: {
+    &quot;id&quot;: &quot;00000000-0000-4000-8000-000000000000&quot;,
+    &quot;intent&quot;: &quot;agent-understanding&quot;,
+    &quot;windowHours&quot;: 6,
+    &quot;createdAt&quot;: &quot;2026-01-01T12:00:00.000Z&quot;,
+    &quot;expiresAt&quot;: &quot;2026-01-01T18:00:00.000Z&quot;,
+    &quot;status&quot;: &quot;ready&quot;
+  },
+  &quot;privacy&quot;: {
+    &quot;retention&quot;: &quot;deleted-at-expiry-or-revocation&quot;,
+    &quot;externalProcessing&quot;: false,
+    &quot;originalsPreserved&quot;: true
+  },
+  &quot;files&quot;: [
+    {
+      &quot;path&quot;: &quot;data/people.csv&quot;,
+      &quot;contentType&quot;: &quot;text/csv&quot;,
+      &quot;bytes&quot;: 37,
+      &quot;size&quot;: &quot;37 B&quot;,
+      &quot;sha256&quot;: &quot;50dda3ec0e5f87fe999d0862c4b39d79bf288a12cc121e31515879d83936aac9&quot;,
+      &quot;uploadedAt&quot;: &quot;2026-01-01T12:00:00.000Z&quot;,
+      &quot;parser&quot;: &quot;native-table&quot;,
+      &quot;billingClass&quot;: &quot;free-native&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;warnings&quot;: [],
+      &quot;safety&quot;: {
+        &quot;status&quot;: &quot;basic-check-passed&quot;,
+        &quot;scanner&quot;: &quot;basic-heuristics-only&quot;,
+        &quot;signals&quot;: [],
+        &quot;disclaimer&quot;: &quot;This is not a malware verdict. It is a small local heuristic check; enhanced scanning is a separate, explicitly priced path.&quot;
+      },
+      &quot;origin&quot;: {
+        &quot;kind&quot;: &quot;upload&quot;
+      }
+    },
+    {
+      &quot;path&quot;: &quot;docs/note.md&quot;,
+      &quot;contentType&quot;: &quot;text/markdown&quot;,
+      &quot;bytes&quot;: 31,
+      &quot;size&quot;: &quot;31 B&quot;,
+      &quot;sha256&quot;: &quot;6b8e5c6029e733d932d7c6a9e35f23154f04760b3713570ccb235eab2933e6e9&quot;,
+      &quot;uploadedAt&quot;: &quot;2026-01-01T12:00:00.000Z&quot;,
+      &quot;parser&quot;: &quot;native-text&quot;,
+      &quot;billingClass&quot;: &quot;free-native&quot;,
+      &quot;confidence&quot;: &quot;high&quot;,
+      &quot;warnings&quot;: [],
+      &quot;safety&quot;: {
+        &quot;status&quot;: &quot;basic-check-passed&quot;,
+        &quot;scanner&quot;: &quot;basic-heuristics-only&quot;,
+        &quot;signals&quot;: [],
+        &quot;disclaimer&quot;: &quot;This is not a malware verdict. It is a small local heuristic check; enhanced scanning is a separate, explicitly priced path.&quot;
+      },
+      &quot;origin&quot;: {
+        &quot;kind&quot;: &quot;upload&quot;
+      }
+    }
+  ],
+  &quot;projections&quot;: [
+    &quot;handoff.md&quot;,
+    &quot;manifest.json&quot;,
+    &quot;tree.txt&quot;,
+    &quot;content.md&quot;,
+    &quot;content.jsonl&quot;
+  ]
+}
+</code></pre>
+      </details>
+      <details name="workspace-file">
+        <summary><code>tree.txt</code> <span>The layout of the workspace</span></summary>
+        <pre tabindex="0"><code>workspaces/00000000-0000-4000-8000-000000000000/
+├── original/
+│   ├── data/people.csv
+│   └── docs/note.md
+└── projections/
+    ├── content.jsonl
+    ├── content.md
+    ├── handoff.md
+    ├── manifest.json
+    └── tree.txt
+</code></pre>
+      </details>
+      <details name="workspace-file">
+        <summary><code>content.md</code> <span>Readable text from the files that could be converted</span></summary>
+        <pre tabindex="0"><code># Agent-readable content
+
+## data/people.csv
+
+Parser: `native-table`
+
+| name | role |
+| --- | --- |
+| Ada | engineer |
+| Grace | admiral |
+
+## docs/note.md
+
+Parser: `native-text`
+
+# Hello
+
+A note for the agent.
+
+</code></pre>
+      </details>
+      <details name="workspace-file">
+        <summary><code>content.jsonl</code> <span>One record per row, or per readable file</span></summary>
+        <pre tabindex="0"><code>{&quot;path&quot;:&quot;data/people.csv&quot;,&quot;data&quot;:{&quot;name&quot;:&quot;Ada&quot;,&quot;role&quot;:&quot;engineer&quot;}}
+{&quot;path&quot;:&quot;data/people.csv&quot;,&quot;data&quot;:{&quot;name&quot;:&quot;Grace&quot;,&quot;role&quot;:&quot;admiral&quot;}}
+{&quot;path&quot;:&quot;docs/note.md&quot;,&quot;text&quot;:&quot;# Hello\n\nA note for the agent.\n&quot;}
+</code></pre>
+      </details>
+      <details name="workspace-file">
+        <summary><code>original/docs/note.md</code> <span>Your file, exactly as you added it</span></summary>
+        <pre tabindex="0"><code># Hello
+
+A note for the agent.
+</code></pre>
+      </details>
+    </section>
+
+    <aside class="example" role="note" aria-labelledby="example-h" data-ahi="ahi.teaching-guidance.annotated-example" data-ahi-renderer="annotated-example" data-ahi-element="aside" data-ahi-version="1">
+      <h3 id="example-h">One file, read two ways</h3>
+      <div class="pair">
+        <figure>
+          <blockquote><pre tabindex="0"><code>name,role
+Ada,engineer
+Grace,admiral
+</code></pre></blockquote>
+          <figcaption><code>data/people.csv</code>, as it was added</figcaption>
+        </figure>
+        <figure>
+          <blockquote><pre tabindex="0"><code>{&quot;path&quot;:&quot;data/people.csv&quot;,&quot;data&quot;:{&quot;name&quot;:&quot;Ada&quot;,&quot;role&quot;:&quot;engineer&quot;}}
+{&quot;path&quot;:&quot;data/people.csv&quot;,&quot;data&quot;:{&quot;name&quot;:&quot;Grace&quot;,&quot;role&quot;:&quot;admiral&quot;}}
+{&quot;path&quot;:&quot;docs/note.md&quot;,&quot;text&quot;:&quot;# Hello\n\nA note for the agent.\n&quot;}
+</code></pre></blockquote>
+          <figcaption><code>content.jsonl</code>, all three records</figcaption>
+        </figure>
+      </div>
+      <p class="guide-explanation">Each CSV row became a record that keeps its column names, and the note became one text record. <code>content.md</code> shows the same rows as a table. The CSV itself is untouched in <code>original/data/people.csv</code>. A file the project cannot read stays as an original and is flagged in the manifest, rather than being dropped or guessed at.</p>
+    </aside>
+  </div>
+</section>
+<section id="stops" class="chapter" aria-labelledby="stops-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="stops-h">What it handles today, and where it stops</h2>
+    <p class="intro">Works means implemented and tested in the repository, with the limits in the notes. Anything it cannot read stays as an original, and the manifest says so.</p>
+
+    <section class="bridge" aria-labelledby="formats-h" data-ahi="ahi.relationships-diagrams.comparison-bridge" data-ahi-renderer="comparison-bridge" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="formats-h">Formats</h3>
+      <table>
+        <caption>What you get from each kind of input, and whether it is built</caption>
+        <thead><tr><th scope="col">Input</th><th scope="col">What you get</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+<tr><th scope="row">Text, Markdown, code, logs</th><td>Readable notes plus the original</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">JSON, CSV, TSV</th><td>Structured records in <code>content.jsonl</code></td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">HTML</th><td>Headings, lists, tables, links, and image descriptions, without scripts or styling; hidden content left out</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">EPUB books</th><td>A book in its own reading order, with title, authors, contents, and chapters</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">ZIP archives</th><td>Members extracted within size and count limits</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">DOCX</th><td>Headings, lists, tables, links, footnotes, comments, text boxes</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">PPTX</th><td>Slides in order: titles, bullets, tables, charts, speaker notes</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">XLSX</th><td>Each sheet as rows of cells, with dates and hidden sheets marked</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">PDF</th><td>The text a PDF carries, in the order it was written, with its outline as contents; scanned pages are not read</td><td><span class="tag tag-works">Works</span></td></tr>
+<tr><th scope="row">Images and scans</th><td>Kept as originals; no text recognition yet</td><td><span class="tag tag-no">Original only</span></td></tr>
+<tr><th scope="row">Private repositories</th><td>Not supported yet</td><td><span class="tag tag-no">Not yet</span></td></tr>
+<tr><th scope="row">Files over 10 MiB each</th><td>Refused for now</td><td><span class="tag tag-no">Not yet</span></td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section class="sheet" aria-labelledby="limits-h" data-ahi="ahi.publications-objects.reference-sheet" data-ahi-renderer="reference-sheet" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="limits-h">Limits at a glance</h3>
+      <dl>
+        <div><dt>Each file</dt><dd>10 MiB.</dd></div>
+        <div><dt>Each request</dt><dd>200 files and 50 MiB.</dd></div>
+        <div><dt>Public GitHub repository</dt><dd>Public repositories on <code>github.com</code> only, with a 25 MiB archive cap.</dd></div>
+        <div><dt>Spreadsheets</dt><dd>A sheet stops at 5,000 rows.</dd></div>
+        <div><dt>Long books and pages</dt><dd>Reading stops at 1.5 million characters and says how far it got.</dd></div>
+        <div><dt>PDF and Office files on Cloudflare's free plan</dt><dd>Reading them takes real CPU time. The free Workers plan allows 10 ms per request, which small documents can fit and larger ones will not. On that plan, set <code>DOCUMENT_READING=off</code> and they are kept as originals.</dd></div>
+        <div><dt>Request rate</dt><dd>120 requests a minute per caller address. Cloudflare's limiter is approximate, so this is a brake on floods, not an exact cap.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="notice" role="note" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1">
+      <p><strong>It is not a malware scanner.</strong> It runs a small set of heuristic checks and labels them that way. Do not treat them as a malware verdict. There is no text recognition for scanned pages and pictures.</p>
+    </aside>
+  </div>
+</section>
+<section id="ends" class="chapter" aria-labelledby="ends-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="ends-h">When the window ends</h2>
+    <p class="intro">The clock is the point of the project, so this is the part to read closely.</p>
+
+    <figure class="quote" data-ahi="ahi.typography-reading.pull-quote" data-ahi-renderer="pull-quote" data-ahi-element="figure" data-ahi-version="1">
+      <blockquote><p>Anyone with the link can read the workspace until it ends. Treat it like a password for those hours.</p></blockquote>
+      <figcaption>A share link is a bearer link.</figcaption>
+    </figure>
+
+    <details class="states" open data-ahi="ahi.motion-time.state-transition" data-ahi-renderer="state-transition" data-ahi-element="details" data-ahi-version="1">
+      <summary>What changes when the window ends</summary>
+      <div class="state-pair">
+        <section class="state state-open" aria-labelledby="st-open">
+          <h3 id="st-open">While the window is open</h3>
+          <ul>
+            <li>The share link can read: <code>handoff.md</code>, the manifest, the readable text, and your originals, as many times as needed.</li>
+            <li>The separate upload token can add files and revoke the link. The share link cannot.</li>
+            <li>The read-only MCP endpoint on the link answers. It is experimental.</li>
+          </ul>
+        </section>
+        <section class="state state-ended" aria-labelledby="st-ended">
+          <h3 id="st-ended">After it ends, or once you revoke it</h3>
+          <ul>
+            <li>Every request returns <code>410 Gone</code> at once, because the app checks expiry on every request. That includes the MCP endpoint.</li>
+            <li>The stored files and records are deleted on the next request or within 15 minutes, by the scheduled cleanup.</li>
+          </ul>
+        </section>
+      </div>
+    </details>
+
+    <section class="ladder" aria-labelledby="ladder-h" data-ahi="ahi.relationships-diagrams.cause-and-effect-ladder" data-ahi-renderer="cause-and-effect-ladder" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="ladder-h">If you revoke the link, or a deletion fails</h3>
+      <ol>
+        <li><strong>You revoke the link.</strong> Access returns <code>410 Gone</code> at once.</li>
+        <li><strong>The app deletes the file rows and every stored object</strong> before it reports success.</li>
+        <li><strong>If a deletion fails partway,</strong> access stays off, the workspace is marked as not yet purged, and the response to revoke says so.</li>
+        <li><strong>The next revoke or the scheduled cleanup retries</strong> until the purge completes.</li>
+      </ol>
+    </section>
+
+    <aside class="notice" role="note" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1">
+      <p><strong>What is not covered.</strong> Your hosting provider's own backups, logs, and retention policies sit outside the app, and the project does not promise secure erasure. "Zero retention" is a design goal, not a guarantee. Parsing runs inside your Worker, with no external processing by default. The full version is in <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md">PRIVACY.md</a>.</p>
+    </aside>
+  </div>
+</section>
+<section id="numbers" class="chapter" aria-labelledby="numbers-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="numbers-h">The numbers, and what they do not show</h2>
+    <p class="intro">Agent File Optimizer does not make text smaller, and it does not claim to. It saves tokens where a file carries a lot of markup, and it turns files an agent cannot read at all into readable text. The value is orientation and readability, not compression. Each figure below is a receipt: what is claimed, when it holds, what it leaves out, and how to check it.</p>
+
+    <div class="versus">
+      <div>
+        <h3 class="group">Where it saves tokens</h3>
+<article class="claim" id="claim-web-pages-saving" data-claim="web-pages-saving" data-group="saves">
+<h3>Ten real web pages: 91% fewer tokens</h3>
+<dl class="receipt">
+<div><dt>Claim</dt><dd>On ten real web pages, the readable text came to 91% fewer tokens than the page's markup (583,220 tokens down to 49,899).</dd></div>
+<div><dt>Holds when</dt><dd>The ten pages were fetched live on 28 Oct 2026 and counted with a proxy tokenizer (o200k_base). They are modern, script-heavy pages, and the saving ranged from 71% to 99%.</dd></div>
+<div><dt>Doesn't tell you</dt><dd>Older, plainer HTML will save less. A proxy tokenizer is not Claude's, so read the figure as indicative. Ten pages is a small sample, so this is not a general saving.</dd></div>
+<div><dt>Check it</dt><dd>The report: <a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a><pre class="claim-command" tabindex="0"><code>python3 scripts/benchmark/pages.py fetch DIR
+EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts
+python3 scripts/benchmark/pages.py measure DIR OUT</code></pre></dd></div>
+<div><dt>Say it's wrong</dt><dd><a href="https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md&amp;title=Claim%20on%20the%20project%20site%3A%20Ten%20real%20web%20pages%3A%2091%25%20fewer%20tokens">Open an issue about this claim</a></dd></div>
+</dl>
+</article>
+      </div>
+      <div>
+        <h3 class="group">Where it does not</h3>
+<article class="claim" id="claim-text-no-saving" data-claim="text-no-saving" data-group="no-saving">
+<h3>Plain text and code: no saving</h3>
+<dl class="receipt">
+<div><dt>Claim</dt><dd>Leaving out the one HTML page, the readable notes for the text, Markdown, code, JSON and CSV files came to 23,073 tokens against 22,344 for the originals, which is 3% more.</dd></div>
+<div><dt>Holds when</dt><dd>A 15-file corpus built from the repository's own files and prose, measured on 27 Oct 2026 with a proxy tokenizer.</dd></div>
+<div><dt>Doesn't tell you</dt><dd>It saves tokens only where a file carries markup. On text and code the value is orientation and readability, not compression, and the handoff note itself adds 255 tokens. The corpus is small.</dd></div>
+<div><dt>Check it</dt><dd>The report: <a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a><pre class="claim-command" tabindex="0"><code>npm run dev   # in one terminal
+python3 scripts/benchmark/make_corpus.py DIR
+python3 scripts/benchmark/measure.py DIR RESULTS.json http://127.0.0.1:8787</code></pre></dd></div>
+<div><dt>Say it's wrong</dt><dd><a href="https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md&amp;title=Claim%20on%20the%20project%20site%3A%20Plain%20text%20and%20code%3A%20no%20saving">Open an issue about this claim</a></dd></div>
+</dl>
+</article>
+      </div>
     </div>
-  </section>
 
-  <section aria-labelledby="who">
-    <h2 id="who">Who it is for</h2>
-    <p>People who want a simple handoff to an agent or a collaborator, without remembering conversion commands, copying files around, or trusting a service with more than the window needs.</p>
-  </section>
+    <h3 class="group">Whether the reading is accurate</h3>
+    <div class="claims">
+<article class="claim" id="claim-web-recall" data-claim="web-recall" data-group="reads">
+<h3>Web pages: median 99.9% of pandoc's words</h3>
+<dl class="receipt">
+<div><dt>Claim</dt><dd>On the same ten web pages, the reader found a median of 99.9% of the words that pandoc found, or 96.7% weighted by word count.</dd></div>
+<div><dt>Holds when</dt><dd>Word recall against pandoc -f html -t plain on ten live pages, taken on 28 Oct 2026.</dd></div>
+<div><dt>Doesn't tell you</dt><dd>The recipe page scored 56%, because pandoc also reads text the page hides, such as menus and consent notices, that this reader leaves out on purpose. A page that needs scripts to show its content comes out nearly empty, and the reader says so.</dd></div>
+<div><dt>Check it</dt><dd>The report: <a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a><pre class="claim-command" tabindex="0"><code>EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts
+python3 scripts/benchmark/compare_extraction.py DIR OUT</code></pre></dd></div>
+<div><dt>Say it's wrong</dt><dd><a href="https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md&amp;title=Claim%20on%20the%20project%20site%3A%20Web%20pages%3A%20median%2099.9%25%20of%20pandoc's%20words">Open an issue about this claim</a></dd></div>
+</dl>
+</article>
+<article class="claim" id="claim-pdf-recall" data-claim="pdf-recall" data-group="reads">
+<h3>PDFs: 99.3% of a reference extractor's words</h3>
+<dl class="receipt">
+<div><dt>Claim</dt><dd>Across 59 PDFs, the reader found 99.3% of the words that poppler's pdftotext found, weighted by word count. The median file scored 100%.</dd></div>
+<div><dt>Holds when</dt><dd>PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others. Recall is the share of the reference's words that appear in the output.</dd></div>
+<div><dt>Doesn't tell you</dt><dd>Three of the 59 scored under 90%: two Japanese and Korean files with no character map, and one where a font maps a ligature to the digit 1. Files from Word, LibreOffice, InDesign and Google Docs were not tested, and reading order for columns was not measured.</dd></div>
+<div><dt>Check it</dt><dd>The report: <a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a><pre class="claim-command" tabindex="0"><code>EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts
+python3 scripts/benchmark/compare_extraction.py DIR OUT</code></pre></dd></div>
+<div><dt>Say it's wrong</dt><dd><a href="https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md&amp;title=Claim%20on%20the%20project%20site%3A%20PDFs%3A%2099.3%25%20of%20a%20reference%20extractor's%20words">Open an issue about this claim</a></dd></div>
+</dl>
+</article>
+<article class="claim" id="claim-epub-recall" data-claim="epub-recall" data-group="reads">
+<h3>EPUB books: median 100% of pandoc's words</h3>
+<dl class="receipt">
+<div><dt>Claim</dt><dd>On 27 books, the reader found a median of 100% of the words that pandoc found, and 98.0% weighted by word count.</dd></div>
+<div><dt>Holds when</dt><dd>Project Gutenberg, Standard Ebooks and IDPF sample books, including a Japanese book and an Arabic one, and a Wikisource book, compared with pandoc -f epub -t plain.</dd></div>
+<div><dt>Doesn't tell you</dt><dd>One book, a linear algebra textbook, scored 80%, because pandoc writes equations as TeX commands and this reader writes the symbols. A book made only of pictures is refused with a reason.</dd></div>
+<div><dt>Check it</dt><dd>The report: <a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a><pre class="claim-command" tabindex="0"><code>EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts
+python3 scripts/benchmark/compare_extraction.py DIR OUT</code></pre></dd></div>
+<div><dt>Say it's wrong</dt><dd><a href="https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md&amp;title=Claim%20on%20the%20project%20site%3A%20EPUB%20books%3A%20median%20100%25%20of%20pandoc's%20words">Open an issue about this claim</a></dd></div>
+</dl>
+</article>
+<article class="claim" id="claim-office-readable" data-claim="office-readable" data-group="reads">
+<h3>Office files: readable text instead of XML</h3>
+<dl class="receipt">
+<div><dt>Claim</dt><dd>Three Office files that an agent cannot read directly came out as 2,635 tokens of readable text, against 10,090 tokens of the XML inside them.</dd></div>
+<div><dt>Holds when</dt><dd>A DOCX, an XLSX and a PPTX built for the test from the repository's own prose, measured on 27 Oct 2026.</dd></div>
+<div><dt>Doesn't tell you</dt><dd>The files are synthetic, so real Word, Excel and PowerPoint files will behave differently.</dd></div>
+<div><dt>Check it</dt><dd>The report: <a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a><pre class="claim-command" tabindex="0"><code>python3 scripts/benchmark/make_corpus.py DIR
+python3 scripts/benchmark/measure.py DIR RESULTS.json http://127.0.0.1:8787</code></pre></dd></div>
+<div><dt>Say it's wrong</dt><dd><a href="https://github.com/rmichaelthomas/agent-file-optimizer/issues/new?template=bug_report.md&amp;title=Claim%20on%20the%20project%20site%3A%20Office%20files%3A%20readable%20text%20instead%20of%20XML">Open an issue about this claim</a></dd></div>
+</dl>
+</article>
+    </div>
 
-  <section aria-labelledby="supports">
-    <h2 id="supports">What it handles today, and where it stops</h2>
-    <table>
-      <thead><tr><th>Input</th><th>What you get</th><th>Status</th></tr></thead>
-      <tbody>
-        <tr><td>Text, Markdown, code, logs</td><td>Readable notes plus the original</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>JSON, CSV, TSV</td><td>Structured records in <code>content.jsonl</code></td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>HTML</td><td>Headings, lists, tables, links, and image descriptions, without scripts or styling; hidden content left out</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>EPUB books</td><td>A book in its own reading order, with title, authors, contents, and chapters</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>ZIP archives</td><td>Members extracted within size and count limits</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>DOCX</td><td>Headings, lists, tables, links, footnotes, comments, text boxes</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>PPTX</td><td>Slides in order: titles, bullets, tables, charts, speaker notes</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>XLSX</td><td>Each sheet as rows of cells, with dates and hidden sheets marked</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>PDF</td><td>The text a PDF carries, in the order it was written, with its outline as contents; scanned pages are not read</td><td><span class="tag tag-works">Works</span></td></tr>
-        <tr><td>Images and scans</td><td>Kept as originals; no text recognition yet</td><td><span class="tag tag-no">Original only</span></td></tr>
-        <tr><td>Private repositories</td><td>Not supported yet</td><td><span class="tag tag-no">Not yet</span></td></tr>
-        <tr><td>Files over 10 MiB each</td><td>Refused for now</td><td><span class="tag tag-no">Not yet</span></td></tr>
-      </tbody>
-    </table>
-    <p style="margin-top:14px">A file that cannot be converted is still included as its original. The upload response and <code>manifest.json</code> flag it with a warning. The project does not scan files for malware. It runs a small set of heuristic checks and labels them that way.</p>
-  </section>
+    <aside class="notice" role="note" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1">
+      <p><strong>Not measured:</strong> whether an agent answers better with the handoff, latency, real-world Office files and PDFs from Word, LibreOffice, InDesign, or Google Docs, and anything with Claude's own tokenizer. Token figures use a proxy tokenizer, so read them as indicative.</p>
+    </aside>
 
-  <section aria-labelledby="privacy">
-    <h2 id="privacy">Privacy and trust</h2>
-    <ul class="plain">
-      <li><strong>Short windows.</strong> A link lasts one, six, or twelve hours, or until you revoke it.</li>
-      <li><strong>Bearer links.</strong> Anyone who has the link can read the workspace. Treat it like a password for those hours.</li>
-      <li><strong>Deletion.</strong> When a workspace ends or is revoked, the app deletes its stored files and records. If a deletion fails, a scheduled cleanup retries.</li>
-      <li><strong>What is not covered.</strong> Your hosting provider's own backups, logs, and retention policies sit outside the app. The project does not promise secure erasure.</li>
-      <li><strong>No external processing by default.</strong> Parsing runs inside your Worker. An external parser exists only as an explicit, opt-in adapter.</li>
-    </ul>
-    <p style="margin-top:14px">The full, detailed version is in <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md">PRIVACY.md</a>.</p>
-  </section>
-
-  <section aria-labelledby="use">
-    <h2 id="use">How to use it</h2>
-    <details open>
+    <section class="trail" aria-labelledby="trail-h" data-ahi="ahi.annotation-evidence.source-trail" data-ahi-renderer="source-trail" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="trail-h">Where these numbers come from</h3>
+      <ol>
+        <li><a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a> <span>The report every figure above is checked against. This page is rebuilt only if each figure and condition is found in it. <a href="evidence/">Its SHA-256 is listed here.</a></span></li>
+        <li><a href="https://github.com/rmichaelthomas/agent-file-optimizer/tree/main/scripts/benchmark">scripts/benchmark</a> <span>The scripts that build the corpus, fetch the pages, and compare the reading with pandoc and poppler.</span></li>
+        <li><a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/ROADMAP.md">ROADMAP.md</a> <span>What is still open, including PDFs from more writers and measurement on real folders from real users.</span></li>
+      </ol>
+    </section>
+  </div>
+</section>
+<section id="compare" class="chapter" aria-labelledby="compare-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="compare-h">How it compares</h2>
+    <section class="bridge" aria-labelledby="compare-t" data-ahi="ahi.relationships-diagrams.comparison-bridge" data-ahi-renderer="comparison-bridge" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="compare-t" class="sr-only">Alternatives</h3>
+      <table>
+        <caption>If you would otherwise do something else, what is different here</caption>
+        <thead><tr><th scope="col">If you would otherwise…</th><th scope="col">What is different here</th></tr></thead>
+        <tbody>
+          <tr><th scope="row">Zip the folder and share a drive link</th><td>The agent gets an orientation note and a manifest, not a bundle to unpack. The link ends by itself.</td></tr>
+          <tr><th scope="row">Paste files into a chat</th><td>Originals stay intact, paths are kept, and the same link works for several agents or sessions within the window.</td></tr>
+          <tr><th scope="row">Use a tool that flattens a repository into one prompt</th><td>This takes mixed folders, not only repositories, and keeps the originals beside the readable text. It does not do private repositories.</td></tr>
+          <tr><th scope="row">Use a hosted file-sharing service</th><td>You run it, so the files sit in an account you control. The cost is that you have to deploy it.</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <p class="fine">Where the others still win: a hosted service needs no deployment, and a drive link has no 10 MiB limit on each file.</p>
+  </div>
+</section>
+<section id="run" class="chapter" aria-labelledby="run-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="run-h">How to use it</h2>
+    <details class="accordion" open data-ahi="ahi.reveals-discoveries.accordion" data-ahi-renderer="accordion" data-ahi-element="details" data-ahi-version="1">
       <summary>Try it on your computer</summary>
-      <p>Clone the repository, run <code>npm install</code>, then <code>npm run dev</code>. Open the local address Wrangler prints. No Cloudflare account is needed. The database and bucket live on your machine, in <code>.wrangler/</code>, and nothing is sent to Cloudflare.</p>
+      <div class="accordion-content">
+        <p>No account is needed and nothing leaves your machine. The database and bucket live in <code>.wrangler/</code> on your computer.</p>
+        <pre tabindex="0"><code>git clone https://github.com/rmichaelthomas/agent-file-optimizer.git
+cd agent-file-optimizer
+npm install
+npm run dev</code></pre>
+        <p>Open the address Wrangler prints, drop in a file, and press <strong>Create temporary agent link</strong>.</p>
+      </div>
     </details>
-    <details>
+    <details class="accordion" data-ahi="ahi.reveals-discoveries.accordion" data-ahi-renderer="accordion" data-ahi-element="details" data-ahi-version="1">
       <summary>Run your own copy on Cloudflare</summary>
-      <p>Click <strong>Deploy your own copy to Cloudflare</strong> above, or run <code>npm run deploy</code> from a clone. Either way, the storage is created for you, and you set an admin token so strangers cannot create workspaces on your account. The README covers the details and the privacy notes.</p>
+      <div class="accordion-content">
+        <p>Use the button, which needs a Cloudflare account and no terminal, or run <code>npm run deploy</code> from a clone. Either way the storage is created for you, and you set an admin token so strangers cannot create workspaces on your account. Without one, anyone who can reach your Worker can.</p>
+        <p class="actions"><a class="button primary" href="https://deploy.workers.cloudflare.com/?url=https://github.com/rmichaelthomas/agent-file-optimizer">Deploy your own copy to Cloudflare</a></p>
+      </div>
     </details>
-    <details>
+    <details class="accordion" data-ahi="ahi.reveals-discoveries.accordion" data-ahi-renderer="accordion" data-ahi-element="details" data-ahi-version="1">
       <summary>Connect an agent</summary>
-      <p>Give the agent the share link. It should read <code>handoff.md</code> first. The link also exposes a read-only MCP endpoint for clients that support it. That endpoint is experimental.</p>
+      <div class="accordion-content">
+        <p>Give the agent the share link and tell it to read <code>handoff.md</code> first. The link also exposes a read-only MCP endpoint for clients that support it. That endpoint is experimental.</p>
+      </div>
     </details>
-    <div class="actions"><a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#readme">Read the README</a></div>
-  </section>
-
-  <section aria-labelledby="faq">
-    <h2 id="faq">Questions people ask</h2>
-    <h3>What is Agent File Optimizer?</h3>
-    <p>It is a small open-source Cloudflare Worker. You add files, a folder, or a public GitHub repository, and it gives you one temporary link. Whoever has the link, a person or an AI agent, can read the original files and a plain-language handoff note about them. When the window you chose ends, the link stops working and the stored content is deleted.</p>
-    <h3>Is there a hosted version I can sign up for?</h3>
-    <p>No. The project is software you run on your own Cloudflare account, and the maintainer does not offer a hosted service. You can deploy a copy with one button, or run it on your own computer with no account at all.</p>
-    <h3>How long does a link last?</h3>
-    <p>You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it.</p>
-    <h3>Which file types does it read?</h3>
-    <p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, EPUB books, ZIP archives, Word, PowerPoint, Excel, and PDF files are read. Office files keep their headings, lists, tables, slides, notes, and sheets. PDFs are read in the order they were written, so columns can interleave. Scanned PDFs and images are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
-    <h3>Does it scan files for malware?</h3>
-    <p>No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict.</p>
-    <h3>How private is a share link?</h3>
-    <p>A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure.</p>
-    <h3>Does it work with MCP?</h3>
-    <p>The share link also exposes a read-only MCP endpoint. It is experimental. It has been tested with the official TypeScript and Python SDKs and with Claude Code.</p>
-    <h3>What does it cost?</h3>
-    <p>The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage.</p>
-  </section>
-
-  <section aria-labelledby="changes">
-    <h2 id="changes">What has changed</h2>
+    <p class="actions"><a class="button" href="https://github.com/rmichaelthomas/agent-file-optimizer#readme">Read the README</a></p>
+  </div>
+</section>
+<section id="faq" class="chapter" aria-labelledby="faq-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap prose">
+    <h2 id="faq-h">Questions people ask</h2>
+<h3>What is Agent File Optimizer?</h3>
+<p>It is a small open-source Cloudflare Worker. You add files, a folder, or a public GitHub repository, and it gives you one temporary link. Whoever has the link, a person or an AI agent, can read the original files and a plain-language handoff note about them. When the window you chose ends, the link stops working and the stored content is deleted.</p>
+<h3>Is there a hosted version I can sign up for?</h3>
+<p>No. The project is software you run on your own Cloudflare account, and the maintainer does not offer a hosted service. You can deploy a copy with one button, or run it on your own computer with no account at all.</p>
+<h3>How long does a link last?</h3>
+<p>You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it.</p>
+<h3>Which file types does it read?</h3>
+<p>Text, Markdown, code, logs, JSON, CSV, TSV, HTML, EPUB books, ZIP archives, Word, PowerPoint, Excel, and PDF files are read. Office files keep their headings, lists, tables, slides, notes, and sheets. PDFs are read in the order they were written, so columns can interleave. Scanned PDFs and images are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB.</p>
+<h3>Does it scan files for malware?</h3>
+<p>No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict.</p>
+<h3>How private is a share link?</h3>
+<p>A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure.</p>
+<h3>Does it work with MCP?</h3>
+<p>The share link also exposes a read-only MCP endpoint. It is experimental. It has been tested with the official TypeScript and Python SDKs and with Claude Code.</p>
+<h3>What does it cost?</h3>
+<p>The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage.</p>
+  </div>
+</section>
+<section id="changes" class="chapter" aria-labelledby="changes-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap prose">
+    <h2 id="changes-h">What has changed</h2>
     <ul>
       <li>Web pages are now read as documents, not stripped of tags, and EPUB books are read in their own order. Long files come over MCP in parts, so an agent does not lose the end.</li>
       <li>Word, PowerPoint, Excel, and PDF files are now read from their structure, and checked against independent extractors.</li>
@@ -343,12 +902,13 @@
       <li>The page that creates links is protected against being framed, and input borders are easier to see.</li>
     </ul>
     <p>The full list, by version, is in the <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/CHANGELOG.md">changelog</a>.</p>
-  </section>
+  </div>
+</section>
 </main>
-
-<footer>
-  <div class="wrap-footer" style="max-width:760px;margin:0 auto;padding:0 20px">
-    <p>Agent File Optimizer is open source under the Apache License 2.0. Built by <a href="https://rmichaelthomas.com">R. Michael Thomas</a>.</p>
+<footer class="foot">
+  <div class="wrap">
+    <p>Agent File Optimizer is open source under the Apache License 2.0. Built by <a href="https://rmichaelthomas.com">R. Michael Thomas</a>. Page made with AllHereHTML.</p>
+    <p class="fine">This page is 62 KB in all. It runs no scripts and makes no requests to other sites. <a href="evidence/">The files behind the numbers</a> · <a href="llms.txt">llms.txt</a> · <a href="agents.json">agents.json</a> · <a href="#top">Back to the top</a></p>
   </div>
 </footer>
 </body>

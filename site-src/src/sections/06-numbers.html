@@ -1,0 +1,38 @@
+<section id="numbers" class="chapter" aria-labelledby="numbers-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="numbers-h">The numbers, and what they do not show</h2>
+    <p class="intro">Agent File Optimizer does not make text smaller, and it does not claim to. It saves tokens where a file carries a lot of markup, and it turns files an agent cannot read at all into readable text. The value is orientation and readability, not compression. Each figure below is a receipt: what is claimed, when it holds, what it leaves out, and how to check it.</p>
+
+    <div class="versus">
+      <div>
+        <h3 class="group">Where it saves tokens</h3>
+{{claim:web-pages-saving}}
+      </div>
+      <div>
+        <h3 class="group">Where it does not</h3>
+{{claim:text-no-saving}}
+      </div>
+    </div>
+
+    <h3 class="group">Whether the reading is accurate</h3>
+    <div class="claims">
+{{claim:web-recall}}
+{{claim:pdf-recall}}
+{{claim:epub-recall}}
+{{claim:office-readable}}
+    </div>
+
+    <aside class="notice" role="note" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1">
+      <p><strong>Not measured:</strong> whether an agent answers better with the handoff, latency, real-world Office files and PDFs from Word, LibreOffice, InDesign, or Google Docs, and anything with Claude's own tokenizer. Token figures use a proxy tokenizer, so read them as indicative.</p>
+    </aside>
+
+    <section class="trail" aria-labelledby="trail-h" data-ahi="ahi.annotation-evidence.source-trail" data-ahi-renderer="source-trail" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="trail-h">Where these numbers come from</h3>
+      <ol>
+        <li><a href="evidence/BENCHMARKS.md">BENCHMARKS.md</a> <span>The report every figure above is checked against. This page is rebuilt only if each figure and condition is found in it. <a href="evidence/">Its SHA-256 is listed here.</a></span></li>
+        <li><a href="https://github.com/rmichaelthomas/agent-file-optimizer/tree/main/scripts/benchmark">scripts/benchmark</a> <span>The scripts that build the corpus, fetch the pages, and compare the reading with pandoc and poppler.</span></li>
+        <li><a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/ROADMAP.md">ROADMAP.md</a> <span>What is still open, including PDFs from more writers and measurement on real folders from real users.</span></li>
+      </ol>
+    </section>
+  </div>
+</section>

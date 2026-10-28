@@ -1,0 +1,14 @@
+@media print {
+  :root { --bg: #fff; --panel: #fff; --ink: #000; --muted: #333; --line: #999; --edge: #555; --accent: #1f3a0f; --accent-soft: #fff; --warn: #000; --warn-soft: #fff; --gone: #7a2d0c; --code-bg: #fff; }
+  body { font-size: 11pt; }
+  .skip, .rail { display: none; }
+  .bar { border-bottom: 0; }
+  .actions .button.primary { background: #fff; color: #000; border: 2px solid #000; }
+  a[href^="http"].button::after { content: " (" attr(href) ")"; font-weight: 400; font-size: .8em; overflow-wrap: anywhere; }
+  .chapter, .claim, .step, .state, .ladder li { break-inside: avoid; }
+  pre { max-height: none; overflow: visible; white-space: pre-wrap; overflow-wrap: anywhere; }
+  /* Closed disclosures would print as one line; print every file and answer. */
+  details::details-content { content-visibility: visible; display: block; }
+  .window b, .ribbon li, .ribbon li::before, .step-no, .ladder li::before { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+  .ribbon > ol { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+}

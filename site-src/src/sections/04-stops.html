@@ -1,0 +1,34 @@
+<section id="stops" class="chapter" aria-labelledby="stops-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="stops-h">What it handles today, and where it stops</h2>
+    <p class="intro">Works means implemented and tested in the repository, with the limits in the notes. Anything it cannot read stays as an original, and the manifest says so.</p>
+
+    <section class="bridge" aria-labelledby="formats-h" data-ahi="ahi.relationships-diagrams.comparison-bridge" data-ahi-renderer="comparison-bridge" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="formats-h">Formats</h3>
+      <table>
+        <caption>What you get from each kind of input, and whether it is built</caption>
+        <thead><tr><th scope="col">Input</th><th scope="col">What you get</th><th scope="col">Status</th></tr></thead>
+        <tbody>
+{{formats-rows}}
+        </tbody>
+      </table>
+    </section>
+
+    <section class="sheet" aria-labelledby="limits-h" data-ahi="ahi.publications-objects.reference-sheet" data-ahi-renderer="reference-sheet" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="limits-h">Limits at a glance</h3>
+      <dl>
+        <div><dt>Each file</dt><dd>10 MiB.</dd></div>
+        <div><dt>Each request</dt><dd>200 files and 50 MiB.</dd></div>
+        <div><dt>Public GitHub repository</dt><dd>Public repositories on <code>github.com</code> only, with a 25 MiB archive cap.</dd></div>
+        <div><dt>Spreadsheets</dt><dd>A sheet stops at 5,000 rows.</dd></div>
+        <div><dt>Long books and pages</dt><dd>Reading stops at 1.5 million characters and says how far it got.</dd></div>
+        <div><dt>PDF and Office files on Cloudflare's free plan</dt><dd>Reading them takes real CPU time. The free Workers plan allows 10 ms per request, which small documents can fit and larger ones will not. On that plan, set <code>DOCUMENT_READING=off</code> and they are kept as originals.</dd></div>
+        <div><dt>Request rate</dt><dd>120 requests a minute per caller address. Cloudflare's limiter is approximate, so this is a brake on floods, not an exact cap.</dd></div>
+      </dl>
+    </section>
+
+    <aside class="notice" role="note" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1">
+      <p><strong>It is not a malware scanner.</strong> It runs a small set of heuristic checks and labels them that way. Do not treat them as a malware verdict. There is no text recognition for scanned pages and pictures.</p>
+    </aside>
+  </div>
+</section>

@@ -1,0 +1,23 @@
+{
+  "@context": "https://schema.org",
+  "@type": [
+    "SoftwareApplication",
+    "SoftwareSourceCode"
+  ],
+  "name": "Agent File Optimizer",
+  "description": "A self-hosted Cloudflare Worker that turns files into a temporary, readable link for an AI agent or a collaborator. The link ends on its own and the stored content is deleted.",
+  "url": "https://rmichaelthomas.github.io/agent-file-optimizer/",
+  "codeRepository": "https://github.com/rmichaelthomas/agent-file-optimizer",
+  "image": "https://rmichaelthomas.github.io/agent-file-optimizer/og.png",
+  "applicationCategory": "DeveloperApplication",
+  "operatingSystem": "Cloudflare Workers",
+  "programmingLanguage": "TypeScript",
+  "license": "https://www.apache.org/licenses/LICENSE-2.0",
+  "isAccessibleForFree": true,
+  "keywords": "AI agents, MCP, Cloudflare Workers, file sharing, temporary links, document conversion, Markdown, self-hosted, privacy",
+  "author": {
+    "@type": "Person",
+    "name": "R. Michael Thomas",
+    "url": "https://rmichaelthomas.com"
+  }
+}

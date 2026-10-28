@@ -1,0 +1,34 @@
+[
+  {
+    "q": "What is Agent File Optimizer?",
+    "a": "It is a small open-source Cloudflare Worker. You add files, a folder, or a public GitHub repository, and it gives you one temporary link. Whoever has the link, a person or an AI agent, can read the original files and a plain-language handoff note about them. When the window you chose ends, the link stops working and the stored content is deleted."
+  },
+  {
+    "q": "Is there a hosted version I can sign up for?",
+    "a": "No. The project is software you run on your own Cloudflare account, and the maintainer does not offer a hosted service. You can deploy a copy with one button, or run it on your own computer with no account at all."
+  },
+  {
+    "q": "How long does a link last?",
+    "a": "You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it."
+  },
+  {
+    "q": "Which file types does it read?",
+    "a": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, EPUB books, ZIP archives, Word, PowerPoint, Excel, and PDF files are read. Office files keep their headings, lists, tables, slides, notes, and sheets. PDFs are read in the order they were written, so columns can interleave. Scanned PDFs and images are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
+  },
+  {
+    "q": "Does it scan files for malware?",
+    "a": "No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict."
+  },
+  {
+    "q": "How private is a share link?",
+    "a": "A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure."
+  },
+  {
+    "q": "Does it work with MCP?",
+    "a": "The share link also exposes a read-only MCP endpoint. It is experimental. It has been tested with the official TypeScript and Python SDKs and with Claude Code."
+  },
+  {
+    "q": "What does it cost?",
+    "a": "The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage."
+  }
+]

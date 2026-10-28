@@ -241,7 +241,7 @@ This is a small project and it is useful to hear how it behaves on real folders.
 
 ## Project status
 
-The maintainer runs one private deployment on Cloudflare (a Worker, an R2 bucket, and a D1 database), gated by an admin token. It is not offered as a public service. The project's public site is a static page in `site/`, published with GitHub Pages.
+The maintainer runs one private deployment on Cloudflare (a Worker, an R2 bucket, and a D1 database), gated by an admin token. It is not offered as a public service. The project's public site is a static page published with GitHub Pages from `site/`, which is generated from `site-src/`.
 
 This is a small project with a short operating history. Read the limits above before relying on it, and run your own copy if you need it.
 

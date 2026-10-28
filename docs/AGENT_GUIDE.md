@@ -22,8 +22,10 @@ It is software to be run by its operator. It is not a hosted service, and do not
 | `npm run og` | Regenerates `site/og.png` (Open Graph) and `docs/images/social-preview.png` (the file to upload in the repository's Social preview setting). Needs Google Chrome. |
 | `npm run browser-check` | Drives the landing page in Chrome against a local Worker: create, copy, open, revoke, error paths, layout and contrast. Needs Google Chrome. Set `BASE` to check a live copy. CI runs it. |
 | `npm run deploy:dry` | `wrangler deploy --dry-run`. Builds the bundle and lists bindings. Does not publish. |
-| `npm run site:check` | Static checks on `site/index.html`: metadata, no scripts or trackers, attribution, no unsupported claims. |
-| `npm run site:preview` | Serves `site/` on `127.0.0.1:8788`. |
+| `npm run site:build` | Rebuilds `site/` from `site-src/`. Commit the result; a test fails if `site/` is stale. |
+| `npm run site:test` | Tests for the site's build and tools, its claims, its structure and its colour contrast. |
+| `npm run site:check` | Static checks on `site/`: metadata, no scripts or trackers, attribution, no unsupported claims, every file linked, hashes of the published evidence. |
+| `npm run site:preview` | Serves `site/` on `127.0.0.1:8788` under `/agent-file-optimizer/`, the way GitHub Pages does. |
 
 Set `WRANGLER_SEND_METRICS=false` when running Wrangler in automation.
 
@@ -63,7 +65,8 @@ Current deployments, for reference:
 | `src/mime.ts` | Content type from extension when the upload declares nothing useful. |
 | `src/ui.ts` | The browser interface, rendered as one HTML string. |
 | `migrations/` | Record of schema changes for existing databases. A new migration needs a matching change in `src/schema.ts`. |
-| `site/` | Public static site for Cloudflare Pages. No build step. |
+| `site/` | The public site that GitHub Pages publishes. Generated from `site-src/` and committed. Do not edit `site/index.html` by hand. |
+| `site-src/` | The source of the public site: sections, styles, claims, tools, tests, and its own agent documents in `site-src/agents/`. |
 
 ## API contract
 

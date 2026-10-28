@@ -1,0 +1,38 @@
+# Agent File Optimizer
+
+> A self-hosted Cloudflare Worker that turns files into a temporary, readable link for an AI agent or a collaborator. You add files, a folder, or a public GitHub repository. The link keeps the originals and adds a handoff note and readable text. It stops working when the window you choose (1, 6, or 12 hours) ends or you revoke it, and the stored content is deleted. Open source under Apache-2.0. There is no hosted service; you run your own copy.
+
+## Start here
+
+- [Project site](https://rmichaelthomas.github.io/agent-file-optimizer/): what it does, what it handles, its limits, and each measured result with the conditions it holds under.
+- [Evidence](https://rmichaelthomas.github.io/agent-file-optimizer/evidence/): the benchmark report behind every figure, with its SHA-256.
+- [README](https://github.com/rmichaelthomas/agent-file-optimizer#readme): three ways to run it (deploy button, one command, or local with no account).
+- [Agent guide](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/docs/AGENT_GUIDE.md): commands, architecture, and API contracts.
+- [Privacy](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md): what is stored, when it is deleted, and what is outside the app's control.
+
+## What a share link contains
+
+- `handoff.md`: what the workspace is for, when it expires, and what to read first.
+- `manifest.json`: each file with its hash, parser, confidence, and warnings.
+- `content.md` and `content.jsonl`: readable text and structured records.
+- `tree.txt`: the folder layout.
+- `original/<path>`: every file exactly as it was added.
+
+## Limits stated plainly
+
+- Reads text, Markdown, code, logs, JSON, CSV, TSV, HTML, EPUB, ZIP, DOCX, PPTX, XLSX, and PDF. PDFs are read in the order they were written. Images and scans are kept as originals with no text recognition.
+- Each file is limited to 10 MiB. Private repositories are not supported.
+- Not a malware scanner. A share link is a bearer link: anyone who has it can read the workspace until it ends.
+- The read-only MCP endpoint is experimental and tested with a few clients.
+
+## Measured results, with their conditions
+
+{{claims-list}}
+
+Do not quote a figure without its conditions. None of these is a general claim about token savings.
+
+## Optional
+
+- [Changelog](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/CHANGELOG.md)
+- [Security policy](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/SECURITY.md)
+- [Machine-readable summary](https://rmichaelthomas.github.io/agent-file-optimizer/agents.json)
