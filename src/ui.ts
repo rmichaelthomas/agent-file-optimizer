@@ -41,6 +41,14 @@ export function renderLandingPage(): string {
     #result a { color:var(--accent); overflow-wrap:anywhere; }
     .notice { border-left:3px solid var(--warn); padding-left:12px; color:var(--ink); }
     .note { font-size:.88rem; margin-top:16px; }
+    #repo-picks { margin-top:12px; }
+    #repo-picks fieldset { border:1px solid var(--line); border-radius:12px; padding:6px 14px 12px; margin:0; }
+    #repo-picks legend { padding:0 6px; color:var(--ink); font-weight:700; }
+    #repo-picks h3 { font-size:.8rem; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:14px 0 2px; }
+    .pick { display:flex; align-items:center; gap:10px; min-height:44px; margin:0; color:var(--ink); font-size:.92rem; cursor:pointer; }
+    .pick input { width:20px; height:20px; min-height:0; flex:none; padding:0; accent-color:var(--accent); }
+    .pick .path { overflow-wrap:anywhere; flex:1; }
+    .pick .size { color:var(--muted); font-size:.82rem; white-space:nowrap; }
     .sr-only { position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; }
     @media (prefers-reduced-motion: reduce) { * { transition:none !important; animation:none !important; } }
     @media (max-width:560px) { .drop-row { grid-template-columns:1fr; } .card { padding:18px; } }
@@ -59,6 +67,8 @@ export function renderLandingPage(): string {
     </div>
     <label for="repo-url">Or a public GitHub repository</label>
     <input id="repo-url" type="url" inputmode="url" placeholder="https://github.com/owner/repository">
+    <p class="hint">Paste the address and the files worth sharing are picked for you. You confirm the list before any link exists.</p>
+    <div id="repo-picks" aria-live="polite"></div>
 
     <h2 style="margin-top:22px">2. Choose what it is for and how long it lasts</h2>
     <label for="intent">What should the handoff help with?</label>
@@ -88,7 +98,12 @@ export function renderLandingPage(): string {
   const fileLabel = document.querySelector('#file-label');
   const result = document.querySelector('#result');
   const button = document.querySelector('#go');
+  const repoPicks = document.querySelector('#repo-picks');
+  const repoPattern = /^https:\\/\\/github\\.com\\/[^/\\s]+\\/[^/\\s]+\\/?$/;
+  const groupTitles = { agent: 'Written for agents', orientation: 'Orientation', manifest: 'Project manifests', tool: 'Tool-specific agent files', docs: 'Other documentation' };
   let selectedFiles = [];
+  let repoScan = null;
+  let scanId = 0;
   // Holds the created workspace while its content is being added, so a failed step can be retried
   // without losing the link or the upload token. The token exists only in this page's memory.
   let pending = null;
@@ -118,6 +133,68 @@ export function renderLandingPage(): string {
   dropzone.addEventListener('dragover', (event) => { event.preventDefault(); dropzone.classList.add('is-over'); });
   dropzone.addEventListener('dragleave', () => dropzone.classList.remove('is-over'));
   dropzone.addEventListener('drop', (event) => { event.preventDefault(); dropzone.classList.remove('is-over'); rememberFiles(event.dataTransfer.files); });
+
+  const formatSize = (bytes) => bytes < 1024 ? bytes + ' B' : (bytes / 1024).toFixed(1) + ' KiB';
+  const adminHeaders = () => {
+    const headers = { 'content-type': 'application/json' };
+    const token = document.querySelector('#admin-token').value;
+    if (token) headers.authorization = 'Bearer ' + token;
+    return headers;
+  };
+  const chosenPaths = () => Array.from(repoPicks.querySelectorAll('input[data-path]:checked')).map((box) => box.dataset.path);
+  const includeList = () => { const box = repoPicks.querySelector('#include-list'); return box ? box.checked : true; };
+
+  const renderPicks = (scan) => {
+    const fieldset = el('fieldset');
+    fieldset.append(el('legend', scan.repository.replace('https://github.com/', '') + ' (' + scan.branch + ')'));
+    const groups = {};
+    for (const file of scan.files) (groups[file.group] = groups[file.group] || []).push(file);
+    for (const group of Object.keys(groupTitles)) {
+      if (!groups[group]) continue;
+      fieldset.append(el('h3', groupTitles[group]));
+      for (const file of groups[group]) {
+        const row = el('label', null, { className: 'pick' });
+        const box = el('input', null, { type: 'checkbox', checked: file.checked });
+        box.dataset.path = file.path;
+        row.append(box, el('span', file.path, { className: 'path' }), el('span', formatSize(file.size), { className: 'size' }));
+        fieldset.append(row);
+      }
+    }
+    if (!scan.files.length) fieldset.append(el('p', 'No README, docs, or agent files were found to offer. The file list below can still be included.'));
+    fieldset.append(el('h3', 'Structure'));
+    const list = el('label', null, { className: 'pick' });
+    const listBox = el('input', null, { type: 'checkbox', checked: true, id: 'include-list' });
+    list.append(listBox, el('span', 'A names-only list of all ' + scan.listedPaths + ' paths, so the reader can see where the code lives', { className: 'path' }));
+    fieldset.append(list);
+    fieldset.append(el('p', 'Source code is never copied. Secrets, dependency folders and binaries are never offered.', { className: 'hint' }));
+    repoPicks.replaceChildren(fieldset);
+  };
+
+  const scanRepository = async () => {
+    const url = repoUrl.value.trim();
+    const mine = ++scanId;
+    repoScan = null;
+    repoPicks.replaceChildren();
+    if (!repoPattern.test(url)) return;
+    repoPicks.append(el('p', 'Looking inside the repository…'));
+    try {
+      const response = await fetch('/api/preview-public-repo', { method: 'POST', headers: adminHeaders(), body: JSON.stringify({ url: url }) });
+      if (mine !== scanId) return;
+      if (!response.ok) {
+        repoPicks.replaceChildren(el('p', response.status === 401 ? 'This deployment needs the admin token before it can look inside a repository. Enter it below, and the list will load.' : await readError(response, 'The repository could not be read.'), { className: 'notice' }));
+        return;
+      }
+      const scan = await response.json();
+      if (mine !== scanId) return;
+      repoScan = { url: url, scan: scan };
+      renderPicks(scan);
+    } catch (error) {
+      if (mine === scanId) repoPicks.replaceChildren(el('p', 'The repository could not be read because the connection failed.', { className: 'notice' }));
+    }
+  };
+  let scanTimer = null;
+  repoUrl.addEventListener('input', () => { clearTimeout(scanTimer); scanTimer = setTimeout(scanRepository, 400); });
+  document.querySelector('#admin-token').addEventListener('change', () => { if (!repoScan && repoPattern.test(repoUrl.value.trim())) scanRepository(); });
 
   const revokeLink = async (created, control) => {
     control.disabled = true;
@@ -158,7 +235,7 @@ export function renderLandingPage(): string {
 
   const sendContent = async (created, repository) => {
     if (repository) {
-      const response = await fetch('/api/workspaces/' + encodeURIComponent(created.id) + '/import-public-repo', { method: 'POST', headers: { authorization: 'Bearer ' + created.uploadToken, 'content-type': 'application/json' }, body: JSON.stringify({ url: repository }) });
+      const response = await fetch('/api/workspaces/' + encodeURIComponent(created.id) + '/import-public-repo', { method: 'POST', headers: { authorization: 'Bearer ' + created.uploadToken, 'content-type': 'application/json' }, body: JSON.stringify({ url: repository, paths: pending.paths, includeFileList: pending.includeFileList }) });
       if (!response.ok) throw Object.assign(new Error(await readError(response, 'The repository could not be added.')), { status: response.status });
       return response.json();
     }
@@ -174,9 +251,14 @@ export function renderLandingPage(): string {
     if (!selectedFiles.length && !repository) { result.textContent = 'Choose files, a folder, or a public GitHub repository first.'; return; }
     if (selectedFiles.length && repository) { result.textContent = 'Choose files or a folder, or a repository, not both in one link.'; return; }
     if (repository && !/^https:\\/\\/github\\.com\\/[^/\\s]+\\/[^/\\s]+\\/?$/.test(repository)) { result.textContent = 'Enter a public GitHub repository address, like https://github.com/owner/repository.'; return; }
+    if (repository && (!repoScan || repoScan.url !== repository)) { result.textContent = 'The file list for this repository has not loaded yet. Wait for it, or enter the admin token if it asks for one.'; return; }
+    const paths = repository ? chosenPaths() : [];
+    const includeFileList = repository ? includeList() : false;
+    if (repository && !paths.length && !includeFileList) { result.textContent = 'Check at least one file, or include the names-only list.'; return; }
+    const selectionKey = JSON.stringify([paths, includeFileList]);
     button.disabled = true;
     try {
-      if (pending && (repository !== pending.repository || selectedFiles !== pending.files)) {
+      if (pending && (repository !== pending.repository || selectedFiles !== pending.files || selectionKey !== pending.selectionKey)) {
         // The inputs changed after a failed attempt. Turn the old link off so it does not stay live.
         await fetch('/api/workspaces/' + encodeURIComponent(pending.created.id) + '/revoke', { method: 'POST', headers: { authorization: 'Bearer ' + pending.created.uploadToken } }).catch(() => undefined);
         pending = null;
@@ -188,9 +270,9 @@ export function renderLandingPage(): string {
         if (adminToken) createHeaders.authorization = 'Bearer ' + adminToken;
         const createdResponse = await fetch('/api/workspaces', { method: 'POST', headers: createHeaders, body: JSON.stringify({ intent: document.querySelector('#intent').value, windowHours: Number(document.querySelector('#window').value) }) });
         if (!createdResponse.ok) throw new Error(await readError(createdResponse, 'Could not create the workspace.'));
-        pending = { created: await createdResponse.json(), files: selectedFiles, repository: repository };
+        pending = { created: await createdResponse.json(), files: selectedFiles, repository: repository, paths: paths, includeFileList: includeFileList, selectionKey: selectionKey };
       }
-      result.textContent = 'Adding your files…';
+      result.textContent = repository ? 'Adding the files you chose…' : 'Adding your files…';
       const upload = await sendContent(pending.created, pending.repository);
       const created = pending.created;
       pending = null;

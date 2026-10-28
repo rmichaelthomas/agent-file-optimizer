@@ -1,3 +1,5 @@
+import { unzipSync } from "fflate";
+
 export interface PublicRepository {
   provider: "github";
   owner: string;
@@ -91,6 +93,142 @@ export async function downloadPublicRepository(repository: PublicRepository, fet
     sourceUrl: repository.canonicalUrl,
     branch,
   };
+}
+
+const textDocument = /\.(?:md|mdx|markdown|txt|rst)$/i;
+const maxSelectedFiles = 100;
+const maxSelectedFileBytes = 1024 * 1024;
+const maxSelectedTotalBytes = 10 * 1024 * 1024;
+const maxOfferedFiles = 300;
+const maxTreePaths = 5000;
+
+export type RepositoryGroup = "agent" | "orientation" | "manifest" | "tool" | "docs";
+
+export interface RepositoryCandidate {
+  path: string;
+  size: number;
+  group: RepositoryGroup;
+  /** Whether the file is selected until the person changes it. */
+  checked: boolean;
+}
+
+export interface RepositoryScan {
+  candidates: RepositoryCandidate[];
+  /** Every file path in the repository except vendored and dependency folders. Names only. */
+  treePaths: string[];
+  treeTruncated: boolean;
+  total: number;
+}
+
+export class RepositorySelectionError extends Error {
+  constructor(message: string, readonly status: 400 | 413 = 400) {
+    super(message);
+  }
+}
+
+const manifestNames = new Set(["package.json", "pyproject.toml", "go.mod", "cargo.toml", "gemfile", "composer.json", "pom.xml", "build.gradle", "deno.json", "requirements.txt"]);
+const toolFiles = new Set(["claude.md", "gemini.md", ".cursorrules", ".windsurfrules"]);
+const toolFolders = [".cursor/rules/", ".github/instructions/"];
+const vendoredSegments = new Set(["node_modules", "vendor", "third_party", "dist", "build", ".git"]);
+const secretLike = /(^|\/)(\.env[^/]*|id_rsa[^/]*|id_ed25519[^/]*|[^/]*\.(?:pem|key|p12|pfx|jks|keystore)|credentials[^/]*|secrets?\.[^/]*)$/i;
+
+/** Which group a repository file belongs to, or null when it is never offered. Source, configuration, secrets and vendored code are never offered. */
+export function classifyRepositoryPath(path: string): RepositoryGroup | null {
+  const lower = path.toLowerCase();
+  const segments = lower.split("/");
+  const name = segments[segments.length - 1];
+  const depth = segments.length - 1;
+  if (secretLike.test(lower) || segments.some((part) => vendoredSegments.has(part))) return null;
+  if (lower === "llms.txt" || lower === "llms-full.txt" || lower === "docs/llms.txt" || lower === "docs/llms-full.txt") return "agent";
+  if (name === "agents.md" && depth <= 3) return "agent";
+  if (lower.startsWith("docs/agents/") && textDocument.test(name) && !segments.some((part) => part.startsWith("."))) return "agent";
+  if (toolFiles.has(name) && depth <= 3 && (depth === 0 || !name.startsWith("."))) return "tool";
+  if (lower === ".github/copilot-instructions.md") return "tool";
+  if (toolFolders.some((folder) => lower.startsWith(folder)) && /\.(?:md|mdc|txt)$/.test(name)) return "tool";
+  if (segments.some((part) => part.startsWith("."))) return null;
+  if (/^(?:readme|architecture|contributing)(?:[._-].*)?$/.test(name) && depth <= 2 && (textDocument.test(name) || !name.includes("."))) return "orientation";
+  if (depth === 0 && manifestNames.has(name)) return "manifest";
+  if ((lower.startsWith("docs/") || lower.startsWith("doc/")) && textDocument.test(name)) return "docs";
+  return null;
+}
+
+function stripWrapper(entry: string): string {
+  const slash = entry.indexOf("/");
+  return slash === -1 ? entry : entry.slice(slash + 1);
+}
+
+/** Lists what a GitHub archive offers. GitHub wraps everything in one folder named for the repository and branch; that folder is removed from each path. */
+export function scanRepository(archive: Uint8Array): RepositoryScan {
+  const found: RepositoryCandidate[] = [];
+  const treePaths: string[] = [];
+  let total = 0;
+  unzipSync(archive, {
+    filter: (file) => {
+      if (file.name.endsWith("/")) return false;
+      total += 1;
+      const path = stripWrapper(file.name);
+      if (!path || path.split("/").includes("..")) return false;
+      if (!path.split("/").some((part) => vendoredSegments.has(part.toLowerCase()))) treePaths.push(path);
+      const group = file.originalSize <= maxSelectedFileBytes ? classifyRepositoryPath(path) : null;
+      if (group) found.push({ path, size: file.originalSize, group, checked: group === "agent" || group === "orientation" || group === "manifest" });
+      return false;
+    },
+  });
+  const rank: Record<RepositoryGroup, number> = { agent: 0, orientation: 1, manifest: 2, tool: 3, docs: 4 };
+  found.sort((left, right) => rank[left.group] - rank[right.group] || left.path.split("/").length - right.path.split("/").length || left.path.localeCompare(right.path));
+  treePaths.sort((left, right) => left.localeCompare(right));
+  return { candidates: found.slice(0, maxOfferedFiles), treePaths: treePaths.slice(0, maxTreePaths), treeTruncated: treePaths.length > maxTreePaths, total };
+}
+
+export interface RepositoryFile {
+  path: string;
+  bytes: Uint8Array;
+}
+
+/**
+ * Reads the chosen files out of the archive. `wanted` is the person's selection; each path must be one this scan offered, so a request cannot add anything the rules exclude.
+ * Without `wanted`, the files checked by default are taken, within the caps.
+ */
+export function selectRepositoryFiles(archive: Uint8Array, scan: RepositoryScan, wanted?: string[]): RepositoryFile[] {
+  const offered = new Map(scan.candidates.map((candidate) => [candidate.path, candidate]));
+  let chosen: RepositoryCandidate[];
+  if (wanted) {
+    chosen = [];
+    for (const path of new Set(wanted)) {
+      const candidate = offered.get(path);
+      if (!candidate) throw new RepositorySelectionError(`"${path}" was not one of the files offered for this repository.`);
+      chosen.push(candidate);
+    }
+    if (chosen.length > maxSelectedFiles) throw new RepositorySelectionError(`Choose at most ${maxSelectedFiles} files.`, 413);
+    if (chosen.reduce((sum, candidate) => sum + candidate.size, 0) > maxSelectedTotalBytes) throw new RepositorySelectionError(`The chosen files total more than ${maxSelectedTotalBytes / (1024 * 1024)} MiB. Choose fewer.`, 413);
+  } else {
+    chosen = [];
+    let bytes = 0;
+    for (const candidate of scan.candidates.filter((entry) => entry.checked)) {
+      if (chosen.length >= maxSelectedFiles || bytes + candidate.size > maxSelectedTotalBytes) continue;
+      chosen.push(candidate);
+      bytes += candidate.size;
+    }
+  }
+  if (chosen.length === 0) return [];
+  const byEntry = new Set(chosen.map((candidate) => candidate.path));
+  const unzipped = unzipSync(archive, { filter: (file) => byEntry.has(stripWrapper(file.name)) });
+  const files: RepositoryFile[] = [];
+  for (const [entry, bytes] of Object.entries(unzipped)) files.push({ path: stripWrapper(entry), bytes });
+  return files.sort((left, right) => left.path.localeCompare(right.path));
+}
+
+/** A names-only listing of the repository, so a reader can see where the code lives without the code being copied. */
+export function repositoryFileList(repository: PublicRepository, branch: string, scan: RepositoryScan): string {
+  return [
+    `# Files in ${repository.canonicalUrl} (branch ${branch})`,
+    "",
+    "Paths only. The contents of these files are not part of this workspace unless they are listed elsewhere in it.",
+    scan.treeTruncated ? `Only the first ${scan.treePaths.length.toLocaleString("en-US")} paths are listed.` : `${scan.treePaths.length.toLocaleString("en-US")} paths. Dependency and build folders are left out.`,
+    "",
+    ...scan.treePaths,
+    "",
+  ].join("\n");
 }
 
 export { maxRepositoryBytes };

@@ -119,6 +119,32 @@ const repoMsg = await page.textContent("#result");
 check("bad repo URL gives a specific message", /GitHub|HTTPS|public repository/i.test(repoMsg), repoMsg.slice(0, 120));
 check("no console errors on desktop flow", consoleErrors.length === 0, consoleErrors.join(" | ").slice(0, 200));
 
+// Repository flow: pasting an address lists the files, the pre-checked ones match the defaults, and only the checked paths are sent.
+// GitHub is not reachable from this check, so the two repository endpoints are answered here.
+await page.reload({ waitUntil: "load" });
+await withAdmin(page);
+let sentBody = null;
+await page.route("**/api/preview-public-repo", (route) => route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify({ repository: "https://github.com/o/r", branch: "main", repositoryFileCount: 9, listedPaths: 9, files: [
+  { path: "llms.txt", size: 120, group: "agent", checked: true },
+  { path: "README.md", size: 900, group: "orientation", checked: true },
+  { path: "CLAUDE.md", size: 300, group: "tool", checked: false },
+] }) }));
+await page.route("**/api/workspaces/*/import-public-repo", async (route) => { sentBody = JSON.parse(route.request().postData() || "{}"); await route.fulfill({ status: 201, contentType: "application/json", body: JSON.stringify({ files: ["llms.txt"], warnings: [] }) }); });
+await page.fill("#repo-url", "https://github.com/o/r");
+await page.waitForSelector("#repo-picks input[data-path]", { timeout: 5000 });
+const boxes = await page.$$eval("#repo-picks input[data-path]", (nodes) => nodes.map((n) => [n.dataset.path, n.checked]));
+check("repo files are listed with defaults pre-checked", JSON.stringify(boxes) === JSON.stringify([["llms.txt", true], ["README.md", true], ["CLAUDE.md", false]]), JSON.stringify(boxes));
+const box = await page.$eval("#repo-picks input[data-path]", (n) => { const r = n.closest("label").getBoundingClientRect(); return r.height; });
+check("repo rows are touch-sized", box >= 44, `${box}px`);
+await page.uncheck('#repo-picks input[data-path="README.md"]');
+await page.check('#repo-picks input[data-path="CLAUDE.md"]');
+await page.click("#go");
+await page.waitForFunction(() => document.querySelector("#result").textContent.includes("Ready."), null, { timeout: 10000 });
+check("only the checked paths are sent", sentBody && JSON.stringify(sentBody.paths.sort()) === JSON.stringify(["CLAUDE.md", "llms.txt"]) && sentBody.includeFileList === true, JSON.stringify(sentBody));
+await page.unroute("**/api/preview-public-repo");
+await page.unroute("**/api/workspaces/*/import-public-repo");
+
+
 // Failure path: an oversized file fails at upload. The link must survive and retry must work.
 await page.reload({ waitUntil: "load" });
 await withAdmin(page);
