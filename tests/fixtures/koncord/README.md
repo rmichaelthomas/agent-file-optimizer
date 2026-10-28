@@ -1,0 +1,3 @@
+# Koncord's reading fixtures
+
+Pages and book chapters written for the Koncord reader's tests, one construct each (R. Michael Thomas's own work, from `koncord-shared-agency/Tests/ConcordanceCoreTests/ParsingTests/{reading,epub}`), copied unchanged. They are the hard cases a reader meets in real files: words welded across block boundaries, `<p/>` read as an open tag, a DOCTYPE with an internal subset, a UTF-16 chapter, controls that sit inside prose, an element name that is a prefix of another (`<li` and `<link`), and U+FEFF. `tests/koncord-fixtures.test.ts` states what this reader must do with each.

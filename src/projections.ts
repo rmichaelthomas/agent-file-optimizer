@@ -101,7 +101,10 @@ function manifest(workspace: WorkspaceRecord, sources: ProjectionSource[]): stri
   )}\n`;
 }
 
-function handoff(workspace: WorkspaceRecord, sources: ProjectionSource[]): string {
+/** A text longer than this is read over MCP a part at a time (src/mcp.ts). */
+const LONG_CONTENT = 75_000;
+
+function handoff(workspace: WorkspaceRecord, sources: ProjectionSource[], contentLength = 0): string {
   const unsupported = sources.filter((source) => source.parsed.billingClass === "unsupported").length;
   const externalProcessing = sources.some(({ parsed }) => parsed.billingClass === "external");
   const lines = [
@@ -114,6 +117,7 @@ function handoff(workspace: WorkspaceRecord, sources: ProjectionSource[]): strin
     "",
     "- Read `manifest.json` for file-level provenance, hashes, parser status, and warnings.",
     "- Read `content.md` for the compact human-readable projection.",
+    ...(contentLength > LONG_CONTENT ? [`  - It is long (${contentLength.toLocaleString("en-US")} characters). Over MCP, \`read_projection\` returns it a part at a time; ask for \`part\` 2, 3, and so on. Over HTTP, fetch it whole.`] : []),
     "- Read `content.jsonl` for row- or record-oriented ingestion.",
     "- Read `tree.txt` to understand the workspace layout.",
     "- Use `original/<path>` when the projection is incomplete or fidelity matters.",
@@ -149,10 +153,11 @@ function handoff(workspace: WorkspaceRecord, sources: ProjectionSource[]): strin
 export function buildProjectionBundle(workspace: WorkspaceRecord, sources: ProjectionSource[]): ProjectionBundle {
   const sorted = [...sources].sort((left, right) => left.record.path.localeCompare(right.record.path));
   const files = sorted.map(({ record, parsed }) => ({ ...record, parserId: parsed.parserId, billingClass: parsed.billingClass, warnings: [...parsed.warnings] }));
+  const contentMd = contentMarkdown(sorted);
   const values = new Map<string, string>([
     ["content.jsonl", contentJsonl(sorted)],
-    ["content.md", contentMarkdown(sorted)],
-    ["handoff.md", handoff(workspace, sorted)],
+    ["content.md", contentMd],
+    ["handoff.md", handoff(workspace, sorted, contentMd.length)],
     ["manifest.json", manifest(workspace, sorted)],
     ["tree.txt", treeText(workspace.id, sorted)],
   ]);

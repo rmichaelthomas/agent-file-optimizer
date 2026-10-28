@@ -103,15 +103,17 @@ Status key: **Works** means implemented and tested in this repository, with the 
 | Revoke a link | Works | The link returns `410` at once. Content deletion is retried if it fails partway. |
 | Text, Markdown, code, logs | Works | Preserved, with readable notes. Common code extensions are listed; any other file whose bytes are UTF-8 text is read as text too. |
 | JSON, CSV, TSV | Works | Structured records in `content.jsonl`. |
-| HTML | Works | The visible text, without scripts or styling. |
+| HTML | Works | What the page says about itself (title, language, address, author, date), then its headings, paragraphs, lists, tables, links, image descriptions, and math. Hidden content, scripts, and styles are left out, and embedded pages and videos are named. Scripts do not run, so a page that builds itself in the browser comes out nearly empty, and the reader says so. Checked against pandoc on 10 real pages (median 99.9% of its words found), with about 91% fewer tokens than the markup. See `docs/BENCHMARKS.md`. |
+| EPUB | Works | A book in the reading order its package sets, with title, authors, language, contents, and chapters; math is read as symbols. Checked against pandoc on 27 books: median 100% of its words found, 26 of 27 above 97%. Encrypted (DRM) books and books made of pictures are not read, and the reader says so. Reading stops at 1.5 million characters and says how far it got. |
 | ZIP archives | Works | Members are extracted within size and count limits. |
 | DOCX | Works | Headings, lists, tables, links, footnotes, comments, headers and footers, text boxes, and picture descriptions. Pictures, drawings, and deleted text are not read. |
 | PPTX | Works | Slides in presentation order: titles, bullets, tables, chart data, picture descriptions, and speaker notes. Layout and pictures are not read. |
 | XLSX | Works | Each sheet as tab-separated rows, hidden sheets marked. Dates, booleans, and shared text are resolved, and a formula shows its last calculated value. Number formats such as currency are not applied, and a sheet stops at 5,000 rows. |
-| PDF | Works | Text PDFs, in the order the PDF draws them, so columns can interleave. Checked against poppler on 59 PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others: 99.3% of its words found. Scanned pages (no OCR), encrypted files, and Chinese, Japanese, or Korean text with no character map are not read, and the reader says so. |
+| PDF | Works | Text PDFs, in the order the PDF draws them, so columns can interleave. Checked against poppler on 59 PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others: 99.3% of its words found. When the PDF has an outline it is listed as contents with page numbers, and a missing title is guessed from the largest text on page 1 and marked as a guess. Scanned pages (no OCR), encrypted files, and Chinese, Japanese, or Korean text with no character map are not read, and the reader says so. |
 | Images and scans | Original only | Kept as originals with a warning. No text recognition is built in. |
 | Public GitHub repository import | Works | Only `github.com` public repositories over HTTPS. Redirects are limited to GitHub hosts. 25 MiB archive cap. |
 | Private repositories | Not yet | Not supported. |
+| Long text over MCP | Works | `read_projection` and `read_original` return a text longer than about 75,000 characters a part at a time, so an agent client does not cut it off. |
 | Read-only MCP endpoint on the share link | Experimental | Tested with the official MCP TypeScript SDK (1.32.2, in the test suite), the official Python SDK (1.30.0 and 2.3.0), and Claude Code 2.1.312. Other clients are untested. |
 | Malware scanning | Not yet | The "basic check" is a few heuristics, not a malware verdict. |
 | External parser (OCR, Office, PDF engines) | Not yet | The adapter seam exists. It is off by default and not configured. |

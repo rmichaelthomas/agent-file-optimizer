@@ -109,28 +109,76 @@ function originalResources(workspace: WorkspaceRecord, files: SourceFileRecord[]
   }));
 }
 
+/** An agent client takes one tool answer of about 25,000 tokens and cuts off the rest, so a long text is handed over a part at a time. */
+export const PART_CHARS = 60_000;
+
+/** Where each part of a long text starts. Parts end at a blank line when there is one in the back half of the window, else at a line end, else anywhere. */
+export function partStarts(text: string, size = PART_CHARS): number[] {
+  const starts = [0];
+  let start = 0;
+  while (text.length - start > size * 1.25) {
+    const hard = start + size;
+    let cut = text.lastIndexOf("\n\n", hard);
+    if (cut < start + size * 0.5) cut = text.lastIndexOf("\n", hard);
+    if (cut < start + size * 0.5) cut = hard;
+    start = cut === hard ? cut : cut + (text.startsWith("\n\n", cut) ? 2 : 1);
+    starts.push(start);
+  }
+  return starts;
+}
+
+function partResult(object: StoredObject, uri: string, part: number | undefined): { error: string } | { result: Record<string, unknown> } {
+  const whole = { result: { content: [{ type: "resource", resource: resourceContent(object, uri) }], isError: false } };
+  if (!isText(object.contentType)) return whole;
+  const text = new TextDecoder().decode(object.bytes);
+  const starts = partStarts(text);
+  if (starts.length === 1 && (part === undefined || part === 1)) return whole;
+  const wanted = part ?? 1;
+  if (!Number.isInteger(wanted) || wanted < 1 || wanted > starts.length) return { error: `There ${starts.length === 1 ? "is only 1 part" : `are only ${starts.length} parts`}; part must be between 1 and ${starts.length}.` };
+  const from = starts[wanted - 1];
+  const to = wanted < starts.length ? starts[wanted] : text.length;
+  const note = `[Part ${wanted} of ${starts.length} · characters ${from.toLocaleString("en-US")}–${to.toLocaleString("en-US")} of ${text.length.toLocaleString("en-US")}${wanted < starts.length ? ` · ask for part ${wanted + 1} to continue` : " · end"}]`;
+  return {
+    result: {
+      content: [{ type: "text", text: `${note}\n\n${text.slice(from, to)}` }],
+      structuredContent: { part: wanted, parts: starts.length, characters: text.length, uri },
+      isError: false,
+    },
+  };
+}
+
 const tools = [
   {
     name: "read_projection",
-    description: "Read one generated projection from this temporary workspace.",
+    description: "Read one generated projection from this temporary workspace. A long text comes back a part at a time: the first part says how many there are, and `part` asks for another.",
     inputSchema: {
       type: "object",
-      properties: { name: { type: "string", enum: [...PROJECTION_NAMES], description: "Projection filename." } },
+      properties: {
+        name: { type: "string", enum: [...PROJECTION_NAMES], description: "Projection filename." },
+        part: { type: "integer", minimum: 1, description: "Which part of a long text to read. Default 1. A text under about 75,000 characters comes back whole." },
+      },
       required: ["name"],
       additionalProperties: false,
     },
   },
   {
     name: "read_original",
-    description: "Read a preserved original file by its relative path.",
+    description: "Read a preserved original file by its relative path. A long text file comes back a part at a time.",
     inputSchema: {
       type: "object",
-      properties: { path: { type: "string", description: "Safe relative path from the uploaded workspace." } },
+      properties: {
+        path: { type: "string", description: "Safe relative path from the uploaded workspace." },
+        part: { type: "integer", minimum: 1, description: "Which part of a long text file to read. Default 1." },
+      },
       required: ["path"],
       additionalProperties: false,
     },
   },
 ];
+
+function partArgument(value: unknown): number | undefined {
+  return typeof value === "number" ? value : undefined;
+}
 
 async function callTool(services: RuntimeServices, workspace: WorkspaceRecord, params: Record<string, unknown>, id: RequestId): Promise<Response> {
   const name = params.name;
@@ -139,18 +187,20 @@ async function callTool(services: RuntimeServices, workspace: WorkspaceRecord, p
     const projection = args.name;
     if (typeof projection !== "string" || !PROJECTION_NAMES.includes(projection as (typeof PROJECTION_NAMES)[number])) return rpcError(id, -32602, "Unknown projection name.");
     const uri = resourceUri(workspace.id, "projection", projection);
-    const content = await readResource(services, workspace, uri);
-    if (!content) return rpcResult(id, { content: [{ type: "text", text: "Projection not found." }], isError: true });
-    return rpcResult(id, { content: [{ type: "resource", resource: content }], isError: false });
+    const object = await services.blobs.get(projectionKey(workspace.id, projection));
+    if (!object) return rpcResult(id, { content: [{ type: "text", text: "Projection not found." }], isError: true });
+    const result = partResult(object, uri, partArgument(args.part));
+    return "error" in result ? rpcError(id, -32602, result.error) : rpcResult(id, result.result);
   }
   if (name === "read_original") {
     if (typeof args.path !== "string") return rpcError(id, -32602, "Original path is required.");
     let path: string;
     try { path = normalizeRelativePath(args.path); } catch { return rpcError(id, -32602, "Original path must be a safe relative path."); }
     const uri = resourceUri(workspace.id, "original", path);
-    const content = await readResource(services, workspace, uri);
-    if (!content) return rpcResult(id, { content: [{ type: "text", text: "Original file not found." }], isError: true });
-    return rpcResult(id, { content: [{ type: "resource", resource: content }], isError: false });
+    const object = await services.blobs.get(originalKey(workspace.id, path));
+    if (!object) return rpcResult(id, { content: [{ type: "text", text: "Original file not found." }], isError: true });
+    const result = partResult(object, uri, partArgument(args.part));
+    return "error" in result ? rpcError(id, -32602, result.error) : rpcResult(id, result.result);
   }
   return rpcError(id, -32601, `Unknown tool: ${String(name)}`);
 }

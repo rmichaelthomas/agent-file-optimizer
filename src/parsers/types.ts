@@ -81,6 +81,14 @@ export function getParserCapabilities(): ParserCapability[] {
       notes: "Reads the text a PDF carries, using its pages, fonts, and character maps, in the order the PDF draws it. Scanned pages need OCR, encrypted files are not opened, and text in Asian-language fonts with no character map is not read.",
     },
     {
+      id: "native-epub",
+      label: "EPUB books",
+      billingClass: "free-native",
+      extensions: [".epub"],
+      mimeTypes: ["application/epub+zip"],
+      notes: "Reads a book in the order its package sets, with its title, authors, language, contents, and chapters. Encrypted (DRM) books are not opened.",
+    },
+    {
       id: "native-archive",
       label: "ZIP and project archives",
       billingClass: "free-native",
@@ -114,11 +122,11 @@ export function getParserCapabilities(): ParserCapability[] {
     },
     {
       id: "native-html",
-      label: "Basic HTML",
+      label: "HTML pages",
       billingClass: "free-native",
-      extensions: [".htm", ".html"],
-      mimeTypes: ["text/html"],
-      notes: "Removes scripts and markup for a compact text projection.",
+      extensions: [".htm", ".html", ".xhtml"],
+      mimeTypes: ["text/html", "application/xhtml+xml"],
+      notes: "Reads what a page states about itself, then its headings, paragraphs, lists, tables, links, and image descriptions. Hidden content, scripts, and styles are left out. Scripts do not run, so a page that builds itself in the browser comes out nearly empty.",
     },
     {
       id: "fallback-original-only",

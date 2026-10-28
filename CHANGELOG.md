@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+- HTML is read as a document, not stripped of tags. A new tokenizer follows the HTML Standard and passes html5lib's tokenizer tests (about 6,000 runs, including all 2,231 named character references) and its encoding tests. The reader keeps headings, lists, tables, links, code, quotations, image descriptions, and math; leaves out hidden content, scripts, and styles; names embedded pages and videos; reads a page's title, language, canonical address, author, and dates when it states them; and says when a page builds itself with scripts. Across ten real pages the reading had about 91% fewer tokens than the markup and found a median 99.9% of pandoc's words.
+- EPUB books are read, in the reading order their package sets, with title, authors, language, contents, and chapters. Checked on 27 books (Project Gutenberg, Standard Ebooks, IDPF samples): median 100% of pandoc's words, 26 of 27 above 97%. Encrypted books and picture-only books are refused with a reason.
+- PDF: an outline in the file is listed as contents with page numbers, and a file with no title gets a title guessed from the largest text on page 1, marked as a guess. A margin stamp such as arXiv's is not taken for the title.
+- MCP: `read_projection` and `read_original` take a `part` and return a long text in parts of about 60,000 characters, because agent clients cut a tool answer off at about 25,000 tokens. The handoff says when `content.md` is long.
+- `.xhtml` files are read as HTML. XHTML and EPUB chapters are read as XML: `<p/>` is empty, and a DOCTYPE with an internal subset is skipped, with its entities left unexpanded.
+- `DOCUMENT_READING=off` now also covers EPUB.
+- Tests: html5lib's tokenizer and encoding tests, and Koncord's reading fixtures, are vendored under `tests/fixtures/` (MIT and the author's own; see `THIRD_PARTY.md`).
+
 - Code and unlisted text files are read as text: a broad list of code and config extensions, and any other file whose bytes are UTF-8 with no NUL byte. Before, only 12 extensions were, so `.mjs`, `.py`, `.go`, `.sh`, `.toml` and most others came out as original-only.
 - DOCX, PPTX, XLSX, and PDF now work, not "basic". DOCX keeps headings, lists, tables, links, footnotes, comments, headers and footers, and text boxes. PPTX reads slides in presentation order with titles, bullets, tables, charts, and speaker notes. XLSX reads named sheets with dates, booleans, and shared text. PDF is read from its structure (object streams, fonts and character maps, positioned text). Checked against independent extractors on 70 files: median word recall 100%, word-weighted 99.3%.
 - Added `DOCUMENT_READING=off` for Workers plans whose CPU limit is too small to read documents; PDFs, Office files, and ZIPs then stay original-only with a note.
