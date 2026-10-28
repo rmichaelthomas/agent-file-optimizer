@@ -14,6 +14,8 @@ Thanks for looking. This project is small and maintained by one person on a best
 npm install
 npm test          # unit and HTTP tests, all in-memory
 npm run typecheck
+npm run site:build   # regenerates site/ from site-src/; commit the result
+npm run site:test
 npm run site:check
 npm run deploy:dry
 npm run smoke    # starts the Worker locally and runs the first-run flow end to end

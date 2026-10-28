@@ -1,0 +1,86 @@
+[
+  {
+    "id": "web-pages-saving",
+    "title": "Ten real web pages: 91% fewer tokens",
+    "group": "saves",
+    "plain": {
+      "say": "On ten real web pages, the readable text came to 91% fewer tokens than the page's markup (583,220 tokens down to 49,899).",
+      "holdsWhen": "The ten pages were fetched live on 28 Oct 2026 and counted with a proxy tokenizer (o200k_base). They are modern, script-heavy pages, and the saving ranged from 71% to 99%.",
+      "doesntTell": "Older, plainer HTML will save less. A proxy tokenizer is not Claude's, so read the figure as indicative. Ten pages is a small sample, so this is not a general saving."
+    },
+    "figures": ["91%", "583,220", "49,899", "71%", "99%", "28 Oct 2026", "o200k_base"],
+    "sources": [{ "path": "docs/BENCHMARKS.md", "needles": ["Measured 28 Oct 2026", "The pages are modern and script-heavy", "measured with a proxy tokenizer"] }],
+    "evidence": ["docs/BENCHMARKS.md"],
+    "command": "python3 scripts/benchmark/pages.py fetch DIR\nEVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts\npython3 scripts/benchmark/pages.py measure DIR OUT"
+  },
+  {
+    "id": "text-no-saving",
+    "title": "Plain text and code: no saving",
+    "group": "no-saving",
+    "plain": {
+      "say": "Leaving out the one HTML page, the readable notes for the text, Markdown, code, JSON and CSV files came to 23,073 tokens against 22,344 for the originals, which is 3% more.",
+      "holdsWhen": "A 15-file corpus built from the repository's own files and prose, measured on 27 Oct 2026 with a proxy tokenizer.",
+      "doesntTell": "It saves tokens only where a file carries markup. On text and code the value is orientation and readability, not compression, and the handoff note itself adds 255 tokens. The corpus is small."
+    },
+    "figures": ["23,073", "22,344", "3% more", "255", "27 Oct 2026"],
+    "sources": [{ "path": "docs/BENCHMARKS.md", "needles": ["does not make text smaller, and it does not claim to", "The corpus is small"] }],
+    "evidence": ["docs/BENCHMARKS.md"],
+    "command": "npm run dev   # in one terminal\npython3 scripts/benchmark/make_corpus.py DIR\npython3 scripts/benchmark/measure.py DIR RESULTS.json http://127.0.0.1:8787"
+  },
+  {
+    "id": "office-readable",
+    "title": "Office files: readable text instead of XML",
+    "group": "reads",
+    "plain": {
+      "say": "Three Office files that an agent cannot read directly came out as 2,635 tokens of readable text, against 10,090 tokens of the XML inside them.",
+      "holdsWhen": "A DOCX, an XLSX and a PPTX built for the test from the repository's own prose, measured on 27 Oct 2026.",
+      "doesntTell": "The files are synthetic, so real Word, Excel and PowerPoint files will behave differently."
+    },
+    "figures": ["2,635", "10,090", "27 Oct 2026"],
+    "sources": [{ "path": "docs/BENCHMARKS.md", "needles": ["The containers are synthetic, so real-world Office and PDF files will behave differently"] }],
+    "evidence": ["docs/BENCHMARKS.md"],
+    "command": "python3 scripts/benchmark/make_corpus.py DIR\npython3 scripts/benchmark/measure.py DIR RESULTS.json http://127.0.0.1:8787"
+  },
+  {
+    "id": "pdf-recall",
+    "title": "PDFs: 99.3% of a reference extractor's words",
+    "group": "reads",
+    "plain": {
+      "say": "Across 59 PDFs, the reader found 99.3% of the words that poppler's pdftotext found, weighted by word count. The median file scored 100%.",
+      "holdsWhen": "PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others. Recall is the share of the reference's words that appear in the output.",
+      "doesntTell": "Three of the 59 scored under 90%: two Japanese and Korean files with no character map, and one where a font maps a ligature to the digit 1. Files from Word, LibreOffice, InDesign and Google Docs were not tested, and reading order for columns was not measured."
+    },
+    "figures": ["99.3%", "100%", "Ghostscript and TeX"],
+    "sources": [{ "path": "docs/BENCHMARKS.md", "needles": ["files from Microsoft Word, LibreOffice, InDesign, and Google Docs were not available to test", "reading order for multi-column pages was not measured", "The three PDFs under 90%"] }],
+    "evidence": ["docs/BENCHMARKS.md"],
+    "command": "EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts\npython3 scripts/benchmark/compare_extraction.py DIR OUT"
+  },
+  {
+    "id": "epub-recall",
+    "title": "EPUB books: median 100% of pandoc's words",
+    "group": "reads",
+    "plain": {
+      "say": "On 27 books, the reader found a median of 100% of the words that pandoc found, and 98.0% weighted by word count.",
+      "holdsWhen": "Project Gutenberg, Standard Ebooks and IDPF sample books, including a Japanese book and an Arabic one, and a Wikisource book, compared with pandoc -f epub -t plain.",
+      "doesntTell": "One book, a linear algebra textbook, scored 80%, because pandoc writes equations as TeX commands and this reader writes the symbols. A book made only of pictures is refused with a reason."
+    },
+    "figures": ["27 books", "median 100%", "98.0%", "80%"],
+    "sources": [{ "path": "docs/BENCHMARKS.md", "needles": ["pandoc writes equations as TeX commands", "A book made only of pictures is refused with a reason"] }],
+    "evidence": ["docs/BENCHMARKS.md"],
+    "command": "EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts\npython3 scripts/benchmark/compare_extraction.py DIR OUT"
+  },
+  {
+    "id": "web-recall",
+    "title": "Web pages: median 99.9% of pandoc's words",
+    "group": "reads",
+    "plain": {
+      "say": "On the same ten web pages, the reader found a median of 99.9% of the words that pandoc found, or 96.7% weighted by word count.",
+      "holdsWhen": "Word recall against pandoc -f html -t plain on ten live pages, taken on 28 Oct 2026.",
+      "doesntTell": "The recipe page scored 56%, because pandoc also reads text the page hides, such as menus and consent notices, that this reader leaves out on purpose. A page that needs scripts to show its content comes out nearly empty, and the reader says so."
+    },
+    "figures": ["99.9%", "96.7%", "56%"],
+    "sources": [{ "path": "docs/BENCHMARKS.md", "needles": ["pandoc also reads text the page hides (menus, consent notices) that this reader leaves out on purpose", "pages that need scripts to show their content"] }],
+    "evidence": ["docs/BENCHMARKS.md"],
+    "command": "EVAL_IN=DIR EVAL_OUT=OUT npx vitest run tests/extraction-dump.test.ts\npython3 scripts/benchmark/compare_extraction.py DIR OUT"
+  }
+]

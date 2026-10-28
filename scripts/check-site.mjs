@@ -2,6 +2,7 @@
 import { readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { checkSite } from "../site-src/tools/check-site.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..", "site");
 const failures = [];
@@ -66,6 +67,9 @@ for (const entry of faq ? faq.mainEntity : []) {
   const visible = html.includes(`<h3>${entry.name}</h3>`) && stripTags(html.split(`<h3>${entry.name}</h3>`)[1].split("</p>")[0]) === entry.acceptedAnswer.text;
   expect(visible, `FAQ "${entry.name}" in structured data must match the visible question and answer`);
 }
+
+// Structural rules for the generated site: every file linked, anchors resolve, nothing remote, evidence hashes match, page weight.
+failures.push(...(await checkSite(root)).errors);
 
 if (failures.length) {
   console.error(failures.map((f) => `FAIL ${f}`).join("\n"));

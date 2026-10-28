@@ -1,0 +1,171 @@
+{
+  "name": "Agent File Optimizer",
+  "summary": "A self-hosted Cloudflare Worker that turns files into one temporary, readable link for an AI agent or a collaborator. The link stops working when the window (1, 6, or 12 hours) ends or is revoked, and the stored content is deleted. There is no hosted service.",
+  "site": "https://rmichaelthomas.github.io/agent-file-optimizer/",
+  "repository": "https://github.com/rmichaelthomas/agent-file-optimizer",
+  "license": "Apache-2.0",
+  "windowsHours": [
+    1,
+    6,
+    12
+  ],
+  "limits": [
+    "Each file is limited to 10 MiB.",
+    "A share link is a bearer link: anyone who has it can read the workspace until it ends.",
+    "Not a malware scanner; the basic check is a few heuristics.",
+    "No text recognition for scans and images; they are kept as originals.",
+    "Private repositories are not supported.",
+    "The read-only MCP endpoint is experimental."
+  ],
+  "formats": [
+    {
+      "input": "Text, Markdown, code, logs",
+      "status": "works",
+      "gets": "Readable notes plus the original"
+    },
+    {
+      "input": "JSON, CSV, TSV",
+      "status": "works",
+      "gets": "Structured records in content.jsonl"
+    },
+    {
+      "input": "HTML",
+      "status": "works",
+      "gets": "Headings, lists, tables, links, and image descriptions, without scripts or styling; hidden content left out"
+    },
+    {
+      "input": "EPUB books",
+      "status": "works",
+      "gets": "A book in its own reading order, with title, authors, contents, and chapters"
+    },
+    {
+      "input": "ZIP archives",
+      "status": "works",
+      "gets": "Members extracted within size and count limits"
+    },
+    {
+      "input": "DOCX",
+      "status": "works",
+      "gets": "Headings, lists, tables, links, footnotes, comments, text boxes"
+    },
+    {
+      "input": "PPTX",
+      "status": "works",
+      "gets": "Slides in order: titles, bullets, tables, charts, speaker notes"
+    },
+    {
+      "input": "XLSX",
+      "status": "works",
+      "gets": "Each sheet as rows of cells, with dates and hidden sheets marked"
+    },
+    {
+      "input": "PDF",
+      "status": "works",
+      "gets": "The text a PDF carries, in the order it was written, with its outline as contents; scanned pages are not read"
+    },
+    {
+      "input": "Images and scans",
+      "status": "original",
+      "gets": "Kept as originals; no text recognition yet"
+    },
+    {
+      "input": "Private repositories",
+      "status": "not-yet",
+      "gets": "Not supported yet"
+    },
+    {
+      "input": "Files over 10 MiB each",
+      "status": "not-yet",
+      "gets": "Refused for now"
+    }
+  ],
+  "measuredClaims": [
+    {
+      "id": "web-pages-saving",
+      "title": "Ten real web pages: 91% fewer tokens",
+      "claim": "On ten real web pages, the readable text came to 91% fewer tokens than the page's markup (583,220 tokens down to 49,899).",
+      "holdsWhen": "The ten pages were fetched live on 28 Oct 2026 and counted with a proxy tokenizer (o200k_base). They are modern, script-heavy pages, and the saving ranged from 71% to 99%.",
+      "doesNotTellYou": "Older, plainer HTML will save less. A proxy tokenizer is not Claude's, so read the figure as indicative. Ten pages is a small sample, so this is not a general saving.",
+      "report": "https://rmichaelthomas.github.io/agent-file-optimizer/evidence/BENCHMARKS.md"
+    },
+    {
+      "id": "text-no-saving",
+      "title": "Plain text and code: no saving",
+      "claim": "Leaving out the one HTML page, the readable notes for the text, Markdown, code, JSON and CSV files came to 23,073 tokens against 22,344 for the originals, which is 3% more.",
+      "holdsWhen": "A 15-file corpus built from the repository's own files and prose, measured on 27 Oct 2026 with a proxy tokenizer.",
+      "doesNotTellYou": "It saves tokens only where a file carries markup. On text and code the value is orientation and readability, not compression, and the handoff note itself adds 255 tokens. The corpus is small.",
+      "report": "https://rmichaelthomas.github.io/agent-file-optimizer/evidence/BENCHMARKS.md"
+    },
+    {
+      "id": "office-readable",
+      "title": "Office files: readable text instead of XML",
+      "claim": "Three Office files that an agent cannot read directly came out as 2,635 tokens of readable text, against 10,090 tokens of the XML inside them.",
+      "holdsWhen": "A DOCX, an XLSX and a PPTX built for the test from the repository's own prose, measured on 27 Oct 2026.",
+      "doesNotTellYou": "The files are synthetic, so real Word, Excel and PowerPoint files will behave differently.",
+      "report": "https://rmichaelthomas.github.io/agent-file-optimizer/evidence/BENCHMARKS.md"
+    },
+    {
+      "id": "pdf-recall",
+      "title": "PDFs: 99.3% of a reference extractor's words",
+      "claim": "Across 59 PDFs, the reader found 99.3% of the words that poppler's pdftotext found, weighted by word count. The median file scored 100%.",
+      "holdsWhen": "PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others. Recall is the share of the reference's words that appear in the output.",
+      "doesNotTellYou": "Three of the 59 scored under 90%: two Japanese and Korean files with no character map, and one where a font maps a ligature to the digit 1. Files from Word, LibreOffice, InDesign and Google Docs were not tested, and reading order for columns was not measured.",
+      "report": "https://rmichaelthomas.github.io/agent-file-optimizer/evidence/BENCHMARKS.md"
+    },
+    {
+      "id": "epub-recall",
+      "title": "EPUB books: median 100% of pandoc's words",
+      "claim": "On 27 books, the reader found a median of 100% of the words that pandoc found, and 98.0% weighted by word count.",
+      "holdsWhen": "Project Gutenberg, Standard Ebooks and IDPF sample books, including a Japanese book and an Arabic one, and a Wikisource book, compared with pandoc -f epub -t plain.",
+      "doesNotTellYou": "One book, a linear algebra textbook, scored 80%, because pandoc writes equations as TeX commands and this reader writes the symbols. A book made only of pictures is refused with a reason.",
+      "report": "https://rmichaelthomas.github.io/agent-file-optimizer/evidence/BENCHMARKS.md"
+    },
+    {
+      "id": "web-recall",
+      "title": "Web pages: median 99.9% of pandoc's words",
+      "claim": "On the same ten web pages, the reader found a median of 99.9% of the words that pandoc found, or 96.7% weighted by word count.",
+      "holdsWhen": "Word recall against pandoc -f html -t plain on ten live pages, taken on 28 Oct 2026.",
+      "doesNotTellYou": "The recipe page scored 56%, because pandoc also reads text the page hides, such as menus and consent notices, that this reader leaves out on purpose. A page that needs scripts to show its content comes out nearly empty, and the reader says so.",
+      "report": "https://rmichaelthomas.github.io/agent-file-optimizer/evidence/BENCHMARKS.md"
+    }
+  ],
+  "questions": [
+    {
+      "question": "What is Agent File Optimizer?",
+      "answer": "It is a small open-source Cloudflare Worker. You add files, a folder, or a public GitHub repository, and it gives you one temporary link. Whoever has the link, a person or an AI agent, can read the original files and a plain-language handoff note about them. When the window you chose ends, the link stops working and the stored content is deleted."
+    },
+    {
+      "question": "Is there a hosted version I can sign up for?",
+      "answer": "No. The project is software you run on your own Cloudflare account, and the maintainer does not offer a hosted service. You can deploy a copy with one button, or run it on your own computer with no account at all."
+    },
+    {
+      "question": "How long does a link last?",
+      "answer": "You choose one, six, or twelve hours when you create it, and you can revoke it sooner. After that the link returns an error and the app deletes the stored files and records. If a deletion fails, a scheduled cleanup retries it."
+    },
+    {
+      "question": "Which file types does it read?",
+      "answer": "Text, Markdown, code, logs, JSON, CSV, TSV, HTML, EPUB books, ZIP archives, Word, PowerPoint, Excel, and PDF files are read. Office files keep their headings, lists, tables, slides, notes, and sheets. PDFs are read in the order they were written, so columns can interleave. Scanned PDFs and images are kept as originals with a warning, because there is no text recognition built in. Each file is limited to 10 MiB."
+    },
+    {
+      "question": "Does it scan files for malware?",
+      "answer": "No. It runs a few simple heuristic checks and labels them as such. Do not treat them as a malware verdict."
+    },
+    {
+      "question": "How private is a share link?",
+      "answer": "A share link is a bearer link: anyone who has it can read the workspace until it ends, so treat it like a password. The app stores only hashes of its tokens, and its own logs never include them. Your hosting provider's backups and account-level logs are outside the app's control, and the project does not promise secure erasure."
+    },
+    {
+      "question": "Does it work with MCP?",
+      "answer": "The share link also exposes a read-only MCP endpoint. It is experimental. It has been tested with the official TypeScript and Python SDKs and with Claude Code."
+    },
+    {
+      "question": "What does it cost?",
+      "answer": "The software is free under the Apache License 2.0. The workspaces run in your own Cloudflare account, so Cloudflare's pricing for Workers, R2, and D1 applies to your usage."
+    }
+  ],
+  "documents": {
+    "readme": "https://github.com/rmichaelthomas/agent-file-optimizer#readme",
+    "privacy": "https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md",
+    "agentGuide": "https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/docs/AGENT_GUIDE.md"
+  }
+}

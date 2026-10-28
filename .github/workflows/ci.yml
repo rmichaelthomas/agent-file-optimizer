@@ -25,6 +25,8 @@ jobs:
         run: npm test
       - name: Typecheck
         run: npm run typecheck
+      - name: Public site tests
+        run: npm run site:test
       - name: Public site checks
         run: npm run site:check
       - name: Worker bundle dry run

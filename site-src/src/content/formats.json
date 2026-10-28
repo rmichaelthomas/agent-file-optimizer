@@ -1,0 +1,62 @@
+[
+  {
+    "input": "Text, Markdown, code, logs",
+    "gets": "Readable notes plus the original",
+    "status": "works"
+  },
+  {
+    "input": "JSON, CSV, TSV",
+    "gets": "Structured records in <code>content.jsonl</code>",
+    "status": "works"
+  },
+  {
+    "input": "HTML",
+    "gets": "Headings, lists, tables, links, and image descriptions, without scripts or styling; hidden content left out",
+    "status": "works"
+  },
+  {
+    "input": "EPUB books",
+    "gets": "A book in its own reading order, with title, authors, contents, and chapters",
+    "status": "works"
+  },
+  {
+    "input": "ZIP archives",
+    "gets": "Members extracted within size and count limits",
+    "status": "works"
+  },
+  {
+    "input": "DOCX",
+    "gets": "Headings, lists, tables, links, footnotes, comments, text boxes",
+    "status": "works"
+  },
+  {
+    "input": "PPTX",
+    "gets": "Slides in order: titles, bullets, tables, charts, speaker notes",
+    "status": "works"
+  },
+  {
+    "input": "XLSX",
+    "gets": "Each sheet as rows of cells, with dates and hidden sheets marked",
+    "status": "works"
+  },
+  {
+    "input": "PDF",
+    "gets": "The text a PDF carries, in the order it was written, with its outline as contents; scanned pages are not read",
+    "status": "works"
+  },
+  {
+    "input": "Images and scans",
+    "gets": "Kept as originals; no text recognition yet",
+    "status": "original"
+  },
+  {
+    "input": "Private repositories",
+    "gets": "Not supported yet",
+    "status": "not-yet"
+  },
+  {
+    "input": "Files over 10 MiB each",
+    "gets": "Refused for now",
+    "status": "not-yet"
+  }
+]

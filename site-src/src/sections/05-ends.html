@@ -1,0 +1,46 @@
+<section id="ends" class="chapter" aria-labelledby="ends-h" data-ahi="ahi.navigation-journeys.jump-point" data-ahi-renderer="jump-point" data-ahi-element="section" data-ahi-version="1">
+  <div class="wrap">
+    <h2 id="ends-h">When the window ends</h2>
+    <p class="intro">The clock is the point of the project, so this is the part to read closely.</p>
+
+    <figure class="quote" data-ahi="ahi.typography-reading.pull-quote" data-ahi-renderer="pull-quote" data-ahi-element="figure" data-ahi-version="1">
+      <blockquote><p>Anyone with the link can read the workspace until it ends. Treat it like a password for those hours.</p></blockquote>
+      <figcaption>A share link is a bearer link.</figcaption>
+    </figure>
+
+    <details class="states" open data-ahi="ahi.motion-time.state-transition" data-ahi-renderer="state-transition" data-ahi-element="details" data-ahi-version="1">
+      <summary>What changes when the window ends</summary>
+      <div class="state-pair">
+        <section class="state state-open" aria-labelledby="st-open">
+          <h3 id="st-open">While the window is open</h3>
+          <ul>
+            <li>The share link can read: <code>handoff.md</code>, the manifest, the readable text, and your originals, as many times as needed.</li>
+            <li>The separate upload token can add files and revoke the link. The share link cannot.</li>
+            <li>The read-only MCP endpoint on the link answers. It is experimental.</li>
+          </ul>
+        </section>
+        <section class="state state-ended" aria-labelledby="st-ended">
+          <h3 id="st-ended">After it ends, or once you revoke it</h3>
+          <ul>
+            <li>Every request returns <code>410 Gone</code> at once, because the app checks expiry on every request. That includes the MCP endpoint.</li>
+            <li>The stored files and records are deleted on the next request or within 15 minutes, by the scheduled cleanup.</li>
+          </ul>
+        </section>
+      </div>
+    </details>
+
+    <section class="ladder" aria-labelledby="ladder-h" data-ahi="ahi.relationships-diagrams.cause-and-effect-ladder" data-ahi-renderer="cause-and-effect-ladder" data-ahi-element="section" data-ahi-version="1">
+      <h3 id="ladder-h">If you revoke the link, or a deletion fails</h3>
+      <ol>
+        <li><strong>You revoke the link.</strong> Access returns <code>410 Gone</code> at once.</li>
+        <li><strong>The app deletes the file rows and every stored object</strong> before it reports success.</li>
+        <li><strong>If a deletion fails partway,</strong> access stays off, the workspace is marked as not yet purged, and the response to revoke says so.</li>
+        <li><strong>The next revoke or the scheduled cleanup retries</strong> until the purge completes.</li>
+      </ol>
+    </section>
+
+    <aside class="notice" role="note" data-ahi="ahi.annotation-evidence.context-callout" data-ahi-renderer="context-callout" data-ahi-element="aside" data-ahi-version="1">
+      <p><strong>What is not covered.</strong> Your hosting provider's own backups, logs, and retention policies sit outside the app, and the project does not promise secure erasure. "Zero retention" is a design goal, not a guarantee. Parsing runs inside your Worker, with no external processing by default. The full version is in <a href="https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md">PRIVACY.md</a>.</p>
+    </aside>
+  </div>
+</section>

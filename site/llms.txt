@@ -4,7 +4,8 @@
 
 ## Start here
 
-- [Project site](https://rmichaelthomas.github.io/agent-file-optimizer/): what it does, what it handles, and its limits.
+- [Project site](https://rmichaelthomas.github.io/agent-file-optimizer/): what it does, what it handles, its limits, and each measured result with the conditions it holds under.
+- [Evidence](https://rmichaelthomas.github.io/agent-file-optimizer/evidence/): the benchmark report behind every figure, with its SHA-256.
 - [README](https://github.com/rmichaelthomas/agent-file-optimizer#readme): three ways to run it (deploy button, one command, or local with no account).
 - [Agent guide](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/docs/AGENT_GUIDE.md): commands, architecture, and API contracts.
 - [Privacy](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/PRIVACY.md): what is stored, when it is deleted, and what is outside the app's control.
@@ -24,7 +25,19 @@
 - Not a malware scanner. A share link is a bearer link: anyone who has it can read the workspace until it ends.
 - The read-only MCP endpoint is experimental and tested with a few clients.
 
+## Measured results, with their conditions
+
+- Ten real web pages: 91% fewer tokens. On ten real web pages, the readable text came to 91% fewer tokens than the page's markup (583,220 tokens down to 49,899). Holds when: The ten pages were fetched live on 28 Oct 2026 and counted with a proxy tokenizer (o200k_base). They are modern, script-heavy pages, and the saving ranged from 71% to 99%. Does not tell you: Older, plainer HTML will save less. A proxy tokenizer is not Claude's, so read the figure as indicative. Ten pages is a small sample, so this is not a general saving.
+- Plain text and code: no saving. Leaving out the one HTML page, the readable notes for the text, Markdown, code, JSON and CSV files came to 23,073 tokens against 22,344 for the originals, which is 3% more. Holds when: A 15-file corpus built from the repository's own files and prose, measured on 27 Oct 2026 with a proxy tokenizer. Does not tell you: It saves tokens only where a file carries markup. On text and code the value is orientation and readability, not compression, and the handoff note itself adds 255 tokens. The corpus is small.
+- Office files: readable text instead of XML. Three Office files that an agent cannot read directly came out as 2,635 tokens of readable text, against 10,090 tokens of the XML inside them. Holds when: A DOCX, an XLSX and a PPTX built for the test from the repository's own prose, measured on 27 Oct 2026. Does not tell you: The files are synthetic, so real Word, Excel and PowerPoint files will behave differently.
+- PDFs: 99.3% of a reference extractor's words. Across 59 PDFs, the reader found 99.3% of the words that poppler's pdftotext found, weighted by word count. The median file scored 100%. Holds when: PDFs from Chrome, macOS, Ghostscript and TeX, ReportLab, and others. Recall is the share of the reference's words that appear in the output. Does not tell you: Three of the 59 scored under 90%: two Japanese and Korean files with no character map, and one where a font maps a ligature to the digit 1. Files from Word, LibreOffice, InDesign and Google Docs were not tested, and reading order for columns was not measured.
+- EPUB books: median 100% of pandoc's words. On 27 books, the reader found a median of 100% of the words that pandoc found, and 98.0% weighted by word count. Holds when: Project Gutenberg, Standard Ebooks and IDPF sample books, including a Japanese book and an Arabic one, and a Wikisource book, compared with pandoc -f epub -t plain. Does not tell you: One book, a linear algebra textbook, scored 80%, because pandoc writes equations as TeX commands and this reader writes the symbols. A book made only of pictures is refused with a reason.
+- Web pages: median 99.9% of pandoc's words. On the same ten web pages, the reader found a median of 99.9% of the words that pandoc found, or 96.7% weighted by word count. Holds when: Word recall against pandoc -f html -t plain on ten live pages, taken on 28 Oct 2026. Does not tell you: The recipe page scored 56%, because pandoc also reads text the page hides, such as menus and consent notices, that this reader leaves out on purpose. A page that needs scripts to show its content comes out nearly empty, and the reader says so.
+
+Do not quote a figure without its conditions. None of these is a general claim about token savings.
+
 ## Optional
 
 - [Changelog](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/CHANGELOG.md)
 - [Security policy](https://github.com/rmichaelthomas/agent-file-optimizer/blob/main/SECURITY.md)
+- [Machine-readable summary](https://rmichaelthomas.github.io/agent-file-optimizer/agents.json)
