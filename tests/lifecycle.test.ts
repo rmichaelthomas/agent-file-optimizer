@@ -1,3 +1,4 @@
+import { strToU8, zipSync } from "fflate";
 import { describe, expect, it } from "vitest";
 import { createApp } from "../src/app";
 import { expireDue, PROJECTION_NAMES, projectionKey } from "../src/lifecycle";
@@ -268,5 +269,40 @@ describe("projection refresh cost", () => {
     expect(blobs.originalReads.filter((key) => key.endsWith("one.md") || key.endsWith("two.md"))).toEqual([]);
     const manifest = await json<{ files: Array<{ path: string }> }>(await app.fetch(new Request(`${created.shareUrl}/manifest.json`)));
     expect(manifest.files.map((file) => file.path).sort()).toEqual(["one.md", "three.md", "two.md"]);
+  });
+
+  it("serves a long projection over HTTP a part at a time", async () => {
+    const { app } = setup();
+    const created = await create(app);
+    const paragraph = `${"word ".repeat(100)}\n\n`;
+    expect((await upload(app, created, "long.md", paragraph.repeat(400))).status).toBe(201);
+    const first = await app.fetch(new Request(`${created.shareUrl}/content.md?part=1`));
+    expect(first.status).toBe(200);
+    const parts = Number(first.headers.get("x-part")?.split("/")[1]);
+    expect(parts).toBeGreaterThan(1);
+    expect((await first.text()).startsWith(`[Part 1 of ${parts}`)).toBe(true);
+    const last = await app.fetch(new Request(`${created.shareUrl}/content.md?part=${parts}`));
+    expect((await last.text()).startsWith(`[Part ${parts} of ${parts}`)).toBe(true);
+    expect((await app.fetch(new Request(`${created.shareUrl}/content.md?part=${parts + 1}`))).status).toBe(400);
+    const whole = await (await app.fetch(new Request(`${created.shareUrl}/content.md`))).text();
+    expect(whole.startsWith("[Part")).toBe(false);
+    const handoff = await (await app.fetch(new Request(created.shareUrl))).text();
+    expect(handoff).toContain("content.md?part=2");
+  });
+
+  it("names the files a ZIP left out in the handoff", async () => {
+    const { app } = setup();
+    const created = await create(app);
+    const entries: Record<string, Uint8Array> = {};
+    for (let index = 0; index < 120; index += 1) entries[`src/file-${String(index).padStart(3, "0")}.txt`] = strToU8(`file ${index}`);
+    const form = new FormData();
+    form.set("file", new File([zipSync(entries)], "repo.zip", { type: "application/zip" }));
+    const response = await app.fetch(new Request(created.uploadUrl, { method: "POST", headers: { authorization: `Bearer ${created.uploadToken}` }, body: form }));
+    expect(response.status).toBe(201);
+    const handoff = await (await app.fetch(new Request(created.shareUrl))).text();
+    expect(handoff).toContain("## Not fully read");
+    expect(handoff).toContain("repo.zip");
+    expect(handoff).toContain("20 archive member(s) were omitted");
+    expect(handoff).toContain("First omitted:");
   });
 });

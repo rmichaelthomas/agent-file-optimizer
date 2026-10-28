@@ -60,7 +60,7 @@ Current deployments, for reference:
 | `src/parsers/` | Parser routing. `native.ts` is the free default. `types.ts` holds capabilities and the external runner seam. `sandbox-runner.ts` is the isolated runner adapter. `pdf.ts` reads PDFs, `office.ts` reads DOCX, PPTX, and XLSX, `xml.ts` is the small XML reader they share, `html.ts` reads HTML and XHTML (a light tree, then Markdown), `htmltokens.ts` is its tokenizer (follows the HTML Standard; checked against html5lib), `markupencoding.ts` chooses the text encoding, `entities.ts` is generated character-reference data (do not edit it by hand), `epub.ts` reads EPUB books through `html.ts`, `fontprogram.ts` reads built-in font encodings, and `glyphs.ts` is generated glyph data (do not edit it by hand). |
 | `src/projections.ts` | Builds `handoff.md`, `manifest.json`, `tree.txt`, `content.md`, `content.jsonl`. |
 | `src/mcp.ts` | Read-only, stateless JSON-RPC endpoint at `/s/<token>/mcp`. A text longer than about 75,000 characters is returned a part at a time (`part`), because agent clients cut a tool answer off at about 25,000 tokens. |
-| `src/repository.ts` | Public GitHub import: allowlisted hosts, redirect limit, archive size cap. |
+| `src/repository.ts` | Public GitHub import: allowlisted hosts, redirect limit, archive size cap, and the scan: `classifyRepositoryPath` decides which files are ever offered, `scanRepository` lists them with defaults, `selectRepositoryFiles` re-checks the person's choice against that list. |
 | `src/safety.ts` | Basic heuristic checks. Not malware scanning. |
 | `src/mime.ts` | Content type from extension when the upload declares nothing useful. |
 | `src/ui.ts` | The browser interface, rendered as one HTML string. |
@@ -76,11 +76,12 @@ Current deployments, for reference:
 | `GET /api/capabilities` | none | Parsers, policy, and limits. |
 | `POST /api/workspaces` | admin token if `ADMIN_TOKEN` is set | Body `{ intent, windowHours }` with windowHours in 1, 6, 12. Returns `uploadToken` once. |
 | `POST /api/workspaces/:id/upload` | upload token | Multipart `file` fields with optional `path` fields. |
-| `POST /api/workspaces/:id/import-public-repo` | upload token | Body `{ url }`. Public `github.com` repositories only. |
+| `POST /api/preview-public-repo` | admin token if `ADMIN_TOKEN` is set | Body `{ url }`. Downloads the archive, stores nothing, returns the offered files grouped, with `checked` defaults. |
+| `POST /api/workspaces/:id/import-public-repo` | upload token | Body `{ url, paths?, includeFileList? }`. `paths` must come from the preview; without it the default-checked files are taken. `includeFileList` (default true) adds `repository-files.txt`, names only. |
 | `GET /api/workspaces/:id/status` | upload token | Status and counts. No share link. |
 | `POST /api/workspaces/:id/revoke` | upload token | Idempotent. Returns `500` with `purged: false` if content deletion is incomplete. |
 | `GET /s/:token` | share token (in path) | Returns `handoff.md`. |
-| `GET /s/:token/<projection>` | share token | One of the five projections. |
+| `GET /s/:token/<projection>` | share token | One of the five projections. `?part=N` returns a long text a part at a time (the first line says how many parts there are). Without `part`, the whole text. |
 | `GET /s/:token/original/<path>` | share token | Original file. |
 | `POST /s/:token/mcp` | share token | Read-only JSON-RPC. Experimental. |
 

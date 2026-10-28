@@ -2,10 +2,10 @@ import { createTokenPair, hashBytes, hashToken, tokensMatch } from "./crypto";
 import { PROJECTION_NAMES, analysisKey, bearerToken, cacheParsedResult, originalKey, projectionKey, settleWorkspace, publicView, refreshProjections, shareTokenRecord, summarizeProcessing, uploadTokenMatches, type ProjectionOptions } from "./lifecycle";
 import { getParserCapabilities, isWorkspaceWindowHours, type ExternalParserRunner } from "./parsers/types";
 import { parseWithBestParser } from "./parsers/native";
-import { handleMcpRequest } from "./mcp";
+import { handleMcpRequest, partStarts } from "./mcp";
 import { renderSharePage } from "./render";
 import { basicSafetyCheck } from "./safety";
-import { downloadPublicRepository, maxRepositoryBytes, parsePublicRepositoryUrl } from "./repository";
+import { downloadPublicRepository, maxRepositoryBytes, parsePublicRepositoryUrl, repositoryFileList, RepositorySelectionError, scanRepository, selectRepositoryFiles } from "./repository";
 import { normalizeRelativePath } from "./path";
 import { contentTypeFor } from "./mime";
 import type { AppEnv, Intent, RuntimeServices, SourceFileRecord, WorkspaceCreateResponse, WorkspaceRecord } from "./types";
@@ -94,14 +94,42 @@ async function writesRacedRevocation(id: string, services: RuntimeServices): Pro
   return true;
 }
 
-async function createWorkspace(request: Request, env: AppEnv, services: RuntimeServices): Promise<Response> {
+async function requireAdmin(request: Request, env: AppEnv, action: string): Promise<Response | null> {
   // A blank secret (for example, an empty answer in the deploy form) must not leave the deployment open.
   if (env.ADMIN_TOKEN === "") return errorResponse(503, "ADMIN_TOKEN is set but empty. Set a value, or remove the variable for local use.");
   if (env.ADMIN_TOKEN) {
     const provided = bearerToken(request);
     const valid = provided ? tokensMatch(await hashToken(provided), await hashToken(env.ADMIN_TOKEN)) : false;
-    if (!valid) return errorResponse(401, "This deployment requires an admin token to create a workspace.");
+    if (!valid) return errorResponse(401, `This deployment requires an admin token to ${action}.`);
   }
+  return null;
+}
+
+async function previewPublicRepository(request: Request, env: AppEnv): Promise<Response> {
+  const refused = await requireAdmin(request, env, "look inside a repository");
+  if (refused) return refused;
+  let body: { url?: unknown };
+  try { body = (await request.json()) as { url?: unknown }; } catch { return errorResponse(400, "Send JSON with a public GitHub repository URL."); }
+  if (typeof body.url !== "string") return errorResponse(400, "A public GitHub repository URL is required.");
+  let repository;
+  try { repository = parsePublicRepositoryUrl(body.url); } catch (error) { return errorResponse(400, error instanceof Error ? error.message : "That repository URL is not allowed."); }
+  let downloaded;
+  try { downloaded = await downloadPublicRepository(repository); } catch (error) { return errorResponse(502, error instanceof Error ? error.message : "The public repository could not be downloaded."); }
+  let scan;
+  try { scan = scanRepository(downloaded.bytes); } catch { return errorResponse(502, "The repository archive could not be safely inspected."); }
+  return json({
+    repository: repository.canonicalUrl,
+    branch: downloaded.branch,
+    files: scan.candidates,
+    repositoryFileCount: scan.total,
+    listedPaths: scan.treePaths.length,
+    message: "Nothing has been stored. Choose the files to include, then create the link.",
+  });
+}
+
+async function createWorkspace(request: Request, env: AppEnv, services: RuntimeServices): Promise<Response> {
+  const refused = await requireAdmin(request, env, "create a workspace");
+  if (refused) return refused;
   let body: { intent?: unknown; windowHours?: unknown };
   try {
     body = (await request.json()) as { intent?: unknown; windowHours?: unknown };
@@ -204,14 +232,37 @@ async function importPublicRepository(request: Request, services: RuntimeService
     if (workspace.status === "ready") await settleWorkspace(workspace, services, "expired");
     return errorResponse(410, "This workspace has expired or been revoked.");
   }
-  let body: { url?: unknown };
-  try { body = (await request.json()) as { url?: unknown }; } catch { return errorResponse(400, "Send JSON with a public GitHub repository URL."); }
+  let body: { url?: unknown; paths?: unknown; includeFileList?: unknown };
+  try { body = (await request.json()) as typeof body; } catch { return errorResponse(400, "Send JSON with a public GitHub repository URL."); }
   if (typeof body.url !== "string") return errorResponse(400, "A public GitHub repository URL is required.");
   let repository;
   try { repository = parsePublicRepositoryUrl(body.url); } catch (error) { return errorResponse(400, error instanceof Error ? error.message : "That repository URL is not allowed."); }
   let downloaded;
   try { downloaded = await downloadPublicRepository(repository); } catch (error) { return errorResponse(502, error instanceof Error ? error.message : "The public repository could not be downloaded."); }
-  const ingested = await ingestBytes(services, id, downloaded.path, downloaded.contentType, downloaded.bytes, { kind: "public-repository", locator: repository.canonicalUrl }, parserOptions);
+  let scan;
+  try { scan = scanRepository(downloaded.bytes); } catch { return errorResponse(502, "The repository archive could not be safely inspected."); }
+  if (body.paths !== undefined && (!Array.isArray(body.paths) || body.paths.some((path) => typeof path !== "string"))) return errorResponse(400, "paths must be a list of file paths from the repository preview.");
+  let selected;
+  try { selected = selectRepositoryFiles(downloaded.bytes, scan, body.paths as string[] | undefined); } catch (error) {
+    if (error instanceof RepositorySelectionError) return errorResponse(error.status, error.message);
+    return errorResponse(502, "The repository archive could not be safely inspected.");
+  }
+  const includeFileList = body.includeFileList !== false;
+  if (selected.length === 0 && !includeFileList) return errorResponse(422, "Nothing was chosen. Choose at least one file, or include the file list.");
+  const origin = { kind: "public-repository" as const, locator: repository.canonicalUrl };
+  const warnings: string[] = [];
+  const paths: string[] = [];
+  for (const file of selected) {
+    const path = normalizeRelativePath(file.path);
+    const ingested = await ingestBytes(services, id, path, contentTypeFor(path, ""), file.bytes, origin, parserOptions);
+    paths.push(ingested.record.path);
+    warnings.push(...ingested.warnings.map((warning) => `${path}: ${warning}`));
+  }
+  if (includeFileList) {
+    const listing = new TextEncoder().encode(repositoryFileList(repository, downloaded.branch, scan));
+    const ingested = await ingestBytes(services, id, "repository-files.txt", "text/plain; charset=utf-8", listing, origin, parserOptions);
+    paths.push(ingested.record.path);
+  }
   const bundle = await refreshProjections(workspace, services, parserOptions);
   if (await writesRacedRevocation(id, services)) return errorResponse(410, "This workspace has expired or been revoked.");
   return json({
@@ -223,11 +274,12 @@ async function importPublicRepository(request: Request, services: RuntimeService
       externalFetch: true,
       externalProcessing: false,
       amountUsd: 0,
-      message: "Public source fetched from GitHub with an explicit request. No paid parser or hidden provider was invoked.",
+      message: `Public source fetched from GitHub with an explicit request. Only the ${selected.length} file(s) chosen${includeFileList ? ", and a names-only list of the repository," : ""} were stored; the rest of the repository was not. No paid parser or hidden provider was invoked.`,
     },
-    files: [ingested.record.path],
+    files: paths,
+    repositoryFilesNotAdded: scan.total - selected.length,
     projections: bundle.objects.map((object) => object.key.split("/").pop()),
-    warnings: [...new Set(ingested.warnings)],
+    warnings: [...new Set(warnings)],
     processing: summarizeProcessing(bundle.files),
   }, 201);
 }
@@ -297,6 +349,29 @@ async function share(request: Request, services: RuntimeServices): Promise<Respo
       },
     });
   }
+  const partParam = new URL(request.url).searchParams.get("part");
+  if (name && partParam !== null && name !== "manifest.json") {
+    const text = new TextDecoder().decode(object.bytes);
+    const starts = partStarts(text);
+    const wanted = Number(partParam);
+    if (!Number.isInteger(wanted) || wanted < 1 || wanted > starts.length) {
+      return errorResponse(400, `There ${starts.length === 1 ? "is only 1 part" : `are only ${starts.length} parts`}; part must be between 1 and ${starts.length}.`);
+    }
+    const from = starts[wanted - 1];
+    const to = wanted < starts.length ? starts[wanted] : text.length;
+    const note = `[Part ${wanted} of ${starts.length} · characters ${from.toLocaleString("en-US")}–${to.toLocaleString("en-US")} of ${text.length.toLocaleString("en-US")}${wanted < starts.length ? ` · fetch ?part=${wanted + 1} to continue` : " · end"}]`;
+    return new Response(`${note}\n\n${text.slice(from, to)}`, {
+      headers: {
+        "content-type": object.contentType.startsWith("application/json") ? "text/plain; charset=utf-8" : object.contentType,
+        "cache-control": "no-store",
+        "x-content-type-options": "nosniff",
+        "content-security-policy": "default-src 'none'; frame-ancestors 'none'",
+        "referrer-policy": "no-referrer",
+        "x-robots-tag": "noindex, nofollow, noarchive",
+        "x-part": `${wanted}/${starts.length}`,
+      },
+    });
+  }
   const body = new ArrayBuffer(object.bytes.byteLength);
   new Uint8Array(body).set(object.bytes);
   return new Response(body, {
@@ -342,6 +417,7 @@ export function createApp(env: AppEnv, services: RuntimeServices, options: AppOp
           },
         });
         if (url.pathname === "/api/workspaces" && request.method === "POST") return await createWorkspace(request, env, services);
+        if (url.pathname === "/api/preview-public-repo" && request.method === "POST") return await previewPublicRepository(request, env);
         const uploadMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/upload$/);
         if (uploadMatch && request.method === "POST") return await uploadFiles(request, services, uploadMatch[1], parserOptions);
         const repositoryMatch = url.pathname.match(/^\/api\/workspaces\/([^/]+)\/import-public-repo$/);

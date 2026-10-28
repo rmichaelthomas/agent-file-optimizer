@@ -230,9 +230,10 @@ interface ArchiveMember {
   bytes: Uint8Array;
 }
 
-function boundedArchiveMembers(bytes: Uint8Array, include?: (name: string) => boolean): { members: ArchiveMember[]; skipped: number } {
+function boundedArchiveMembers(bytes: Uint8Array, include?: (name: string) => boolean): { members: ArchiveMember[]; skipped: number; skippedNames: string[] } {
   let selected = 0;
   let skipped = 0;
+  const skippedNames: string[] = [];
   let totalBytes = 0;
   try {
     const unzipped = unzipSync(bytes, {
@@ -241,6 +242,7 @@ function boundedArchiveMembers(bytes: Uint8Array, include?: (name: string) => bo
         if (include && !include(file.name)) return false;
         if (selected >= archiveMemberLimit || file.originalSize > archiveMemberBytesLimit || totalBytes + file.originalSize > archiveBytesLimit) {
           skipped += 1;
+          if (skippedNames.length < 10) skippedNames.push(file.name);
           return false;
         }
         selected += 1;
@@ -251,7 +253,7 @@ function boundedArchiveMembers(bytes: Uint8Array, include?: (name: string) => bo
     const members = Object.entries(unzipped)
       .map(([name, value]) => ({ name, bytes: value }))
       .sort((left, right) => left.name.localeCompare(right.name));
-    return { members, skipped };
+    return { members, skipped, skippedNames };
   } catch {
     throw new Error("The ZIP package could not be safely inspected.");
   }
@@ -278,7 +280,7 @@ function archiveParser(): Parser {
     supports: (input) => matches(input, "native-archive") || officeKind(input.path) !== null,
     parse: async (input): Promise<ParsedFile> => {
       const kind = officeKind(input.path);
-      let extracted: { members: ArchiveMember[]; skipped: number };
+      let extracted: { members: ArchiveMember[]; skipped: number; skippedNames: string[] };
       try {
         // An Office package is mostly pictures and fonts. Only its XML parts are read, so the member limit is not spent on media.
         extracted = boundedArchiveMembers(input.bytes, kind ? (name) => /\.(?:xml|rels)$/i.test(name) : undefined);
@@ -347,7 +349,7 @@ function archiveParser(): Parser {
         }
         warnings.push(...parsed.warnings.map((warning) => `${memberPath}: ${warning}`));
       }
-      if (extracted.skipped > 0) warnings.push(`${extracted.skipped} archive member(s) were omitted by safety limits.`);
+      if (extracted.skipped > 0) warnings.push(`${extracted.skipped} archive member(s) were omitted by safety limits (at most ${archiveMemberLimit} members are read from one archive). First omitted: ${extracted.skippedNames.join(", ")}${extracted.skipped > extracted.skippedNames.length ? ", ..." : ""}. Upload those files on their own to read them.`);
       if (sections.length === 0) warnings.push("The archive contained no readable text members; the original was preserved.");
       return {
         parserId: kind ? `native-office-${kind}` : "native-archive",
